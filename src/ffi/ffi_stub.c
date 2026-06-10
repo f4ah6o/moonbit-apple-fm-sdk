@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <pthread.h>
 
 typedef const void *FMTaskRef;
 typedef const void *FMSystemLanguageModelRef;
@@ -199,28 +198,14 @@ FMLanguageModelSessionResponseStreamRef moonbit_fm_session_stream_response(
     return FMLanguageModelSessionStreamResponse(session, prompt, options_json);
 }
 
-typedef struct {
-    FMLanguageModelSessionResponseStreamRef stream;
-} StreamIterateArgs;
-
-static void *stream_iterate_thread(void *arg) {
-    StreamIterateArgs *args = (StreamIterateArgs *)arg;
-    FMLanguageModelSessionResponseStreamIterate(
-        args->stream, NULL, text_response_callback);
-    CallbackHeader end = { .status = 0, .length = 0 };
-    write(response_pipe[1], &end, sizeof(end));
-    free(args);
-    return NULL;
-}
-
+/* No pthread and no extra end marker here: the Swift iterate is already
+   asynchronous and signals completion itself via a final nil/0 callback,
+   which text_response_callback writes as an empty header. */
 void moonbit_fm_stream_start_iterate(
     FMLanguageModelSessionResponseStreamRef stream
 ) {
-    StreamIterateArgs *args = malloc(sizeof(StreamIterateArgs));
-    args->stream = stream;
-    pthread_t thread;
-    pthread_create(&thread, NULL, stream_iterate_thread, args);
-    pthread_detach(thread);
+    FMLanguageModelSessionResponseStreamIterate(
+        stream, NULL, text_response_callback);
 }
 
 FMLanguageModelSessionResponseStreamRef moonbit_fm_session_stream_response_with_schema(
