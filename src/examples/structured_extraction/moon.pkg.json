@@ -1,14 +1,11 @@
 {
+  "is-main": true,
   "import": [
-    "fu2hito/apple_fm_sdk/ffi",
     "fu2hito/apple_fm_sdk/core",
-    "fu2hito/apple_fm_sdk/prompt",
-    "fu2hito/apple_fm_sdk/options",
+    "fu2hito/apple_fm_sdk/session",
     "fu2hito/apple_fm_sdk/schema",
+    "fu2hito/apple_fm_sdk/property",
     "fu2hito/apple_fm_sdk/generable",
-    "fu2hito/apple_fm_sdk/tool",
-    "fu2hito/apple_fm_sdk/transcript",
-    "fu2hito/apple_fm_sdk/errors",
     "moonbitlang/core/json"
   ],
   "link": {

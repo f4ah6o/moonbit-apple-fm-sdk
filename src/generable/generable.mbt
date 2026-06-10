@@ -42,6 +42,20 @@ pub fn GeneratedContent::release(self : GeneratedContent) -> Unit {
 }
 
 ///|
+/// Decode the generated content's JSON into any type implementing
+/// @json.FromJson (e.g. a struct with derive(FromJson)).
+///
+/// Note: Int64/UInt64 FromJson expect string-encoded JSON values, so prefer
+/// Int/Double fields for model output. Optional fields should be `T?` and
+/// marked `is_optional=true` in the schema; with derive(FromJson) a missing
+/// key decodes to None, but an explicit JSON `null` value fails to decode.
+pub fn[T : @json.FromJson] GeneratedContent::decode(
+  self : GeneratedContent
+) -> T raise @json.JsonDecodeError {
+  @json.from_json(self.json_data)
+}
+
+///|
 pub(open) trait Generable {
   generation_schema() -> @schema.GenerationSchema
   from_generated_content(GeneratedContent) -> Self raise

@@ -115,6 +115,36 @@ pub fn LanguageModelSession::respond_with_json_schema(
 }
 
 ///|
+/// Structured output: generate a value of type T directly from the model.
+/// T provides its schema via Generable::generation_schema() and is decoded
+/// via Generable::from_generated_content().
+pub fn[T : @generable.Generable] LanguageModelSession::extract(
+  self : LanguageModelSession,
+  prompt : String,
+  options~ : @options.GenerationOptions? = None
+) -> T raise {
+  let schema = T::generation_schema()
+  defer schema.release()
+  let content = self.respond_with_schema(prompt, schema, options~)
+  defer content.release()
+  T::from_generated_content(content)
+}
+
+///|
+/// Structured output from a raw JSON schema string; T only needs
+/// derive(FromJson), no Generable impl required.
+pub fn[T : @json.FromJson] LanguageModelSession::extract_with_json_schema(
+  self : LanguageModelSession,
+  prompt : String,
+  json_schema : String,
+  options~ : @options.GenerationOptions? = None
+) -> T raise {
+  let content = self.respond_with_json_schema(prompt, json_schema, options~)
+  defer content.release()
+  content.decode()
+}
+
+///|
 pub fn LanguageModelSession::stream_response(
   self : LanguageModelSession,
   prompt : String,

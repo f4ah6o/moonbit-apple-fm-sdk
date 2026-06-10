@@ -156,7 +156,7 @@ pub fn read_response(max_len : Int) -> (Int, String) {
     (len_buf[2].to_int() << 16) |
     (len_buf[3].to_int() << 24)
   let content = if actual_len > 0 {
-    buf.to_unchecked_string(offset=0, length=actual_len)
+    @utf8.decode_lossy(buf[0:actual_len])
   } else {
     ""
   }
