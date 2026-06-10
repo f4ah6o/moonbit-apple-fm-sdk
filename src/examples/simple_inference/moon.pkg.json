@@ -1,0 +1,13 @@
+{
+  "is-main": true,
+  "import": [
+    "fu2hito/apple_fm_sdk/core",
+    "fu2hito/apple_fm_sdk/session",
+    "fu2hito/apple_fm_sdk/options"
+  ],
+  "link": {
+    "native": {
+      "cc-link-flags": "-L/Users/fu2hito/src/apple-fm-sdk/python-apple-fm-sdk/foundation-models-c/.build/release -lFoundationModels -Wl,-rpath,/Users/fu2hito/src/apple-fm-sdk/python-apple-fm-sdk/foundation-models-c/.build/release"
+    }
+  }
+}

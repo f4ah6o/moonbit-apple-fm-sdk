@@ -1,0 +1,6 @@
+{
+  "name": "fu2hito/apple_fm_sdk",
+  "version": "0.1.0",
+  "source": "src",
+  "preferred-target": "native"
+}
