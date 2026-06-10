@@ -178,6 +178,63 @@ pub fn LanguageModelSession::stream_response(
 }
 
 ///|
+/// Low-level entry for schema-constrained snapshot streaming: composes the
+/// prompt and starts the stream + iteration. The caller drives the read loop
+/// via @ffi.read_response (each frame is a full cumulative partial JSON;
+/// an empty frame signals completion) and must @ffi.release_stream the
+/// returned ref when done. Useful when snapshots must be consumed from an
+/// async context where a sync callback won't do.
+pub fn LanguageModelSession::start_structured_stream(
+  self : LanguageModelSession,
+  prompt : String,
+  schema : @schema.GenerationSchema,
+  options~ : @options.GenerationOptions? = None
+) -> @ffi.FMLanguageModelSessionResponseStreamRef {
+  let composed = @ffi.composed_prompt_initialize()
+  let text_bytes = @ffi.string_to_utf8_bytes(prompt)
+  @ffi.composed_prompt_add_text(composed, text_bytes)
+  let options_bytes = match options {
+    Some(opts) => @ffi.string_to_utf8_bytes(opts.to_json().stringify())
+    None => Bytes::new(0)
+  }
+  let stream = @ffi.session_stream_response_with_schema(
+    self.ptr, composed, schema.ptr, options_bytes,
+  )
+  @ffi.structured_stream_start_iterate(stream)
+  stream
+}
+
+///|
+/// Schema-constrained snapshot streaming (guided generation).
+/// Each on_snapshot call receives the FULL cumulative partial JSON of the
+/// generated value so far — a structurally valid prefix of the schema, not a
+/// delta. Returns the final complete JSON string.
+pub fn LanguageModelSession::stream_response_with_schema(
+  self : LanguageModelSession,
+  prompt : String,
+  schema : @schema.GenerationSchema,
+  options~ : @options.GenerationOptions? = None,
+  on_snapshot~ : (String) -> Unit = fn(_s) {  }
+) -> String raise {
+  let stream = self.start_structured_stream(prompt, schema, options~)
+  let mut last_content = ""
+  while true {
+    let (status, content) = @ffi.read_response(262144)
+    if status != 0 {
+      @ffi.release_stream(stream)
+      @errors.raise_generation_error(status, content)
+    }
+    if content.is_empty() {
+      break
+    }
+    last_content = content
+    on_snapshot(content)
+  }
+  @ffi.release_stream(stream)
+  last_content
+}
+
+///|
 pub fn LanguageModelSession::release(self : LanguageModelSession) -> Unit {
   @ffi.release_session(self.ptr)
   @ffi.cleanup_pipe()

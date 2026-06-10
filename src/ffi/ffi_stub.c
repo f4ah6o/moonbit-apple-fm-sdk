@@ -46,6 +46,13 @@ extern FMLanguageModelSessionResponseStreamRef FMLanguageModelSessionStreamRespo
 extern void FMLanguageModelSessionResponseStreamIterate(
     FMLanguageModelSessionResponseStreamRef stream, void *userInfo,
     FMLanguageModelSessionResponseCallback callback);
+extern FMLanguageModelSessionResponseStreamRef FMLanguageModelSessionStreamResponseWithSchema(
+    FMLanguageModelSessionRef session, FMComposedPromptRef prompt,
+    FMGenerationSchemaRef schema, _Bool includeSchemaInPrompt,
+    const char *optionsJSON);
+extern void FMLanguageModelSessionStructuredResponseStreamIterate(
+    FMLanguageModelSessionResponseStreamRef stream, void *userInfo,
+    FMLanguageModelSessionResponseCallback callback);
 extern char *FMGeneratedContentGetJSONString(FMGeneratedContentRef content);
 extern FMBridgedToolRef FMBridgedToolCreate(
     const char *name, const char *description,
@@ -214,6 +221,27 @@ void moonbit_fm_stream_start_iterate(
     pthread_t thread;
     pthread_create(&thread, NULL, stream_iterate_thread, args);
     pthread_detach(thread);
+}
+
+FMLanguageModelSessionResponseStreamRef moonbit_fm_session_stream_response_with_schema(
+    FMLanguageModelSessionRef session,
+    FMComposedPromptRef prompt,
+    FMGenerationSchemaRef schema,
+    const char *options_json
+) {
+    init_response_pipe();
+    return FMLanguageModelSessionStreamResponseWithSchema(
+        session, prompt, schema, 1, options_json);
+}
+
+/* No pthread and no extra end marker here: the Swift iterate is already
+   asynchronous and signals completion itself via a final nil/0 callback,
+   which text_response_callback writes as an empty header. */
+void moonbit_fm_structured_stream_start_iterate(
+    FMLanguageModelSessionResponseStreamRef stream
+) {
+    FMLanguageModelSessionStructuredResponseStreamIterate(
+        stream, NULL, text_response_callback);
 }
 
 void moonbit_fm_cleanup_pipe(void) {

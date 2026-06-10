@@ -2,7 +2,14 @@
   "is-main": true,
   "import": [
     "fu2hito/apple_fm_sdk/core",
-    "fu2hito/apple_fm_sdk/session"
+    "fu2hito/apple_fm_sdk/session",
+    "fu2hito/apple_fm_sdk/schema",
+    "fu2hito/apple_fm_sdk/ffi",
+    "fu2hito/apple_fm_sdk/ui_ast",
+    "moonbitlang/async",
+    "moonbitlang/async/http",
+    "moonbitlang/async/socket",
+    "moonbitlang/core/encoding/utf8"
   ],
   "link": {
     "native": {

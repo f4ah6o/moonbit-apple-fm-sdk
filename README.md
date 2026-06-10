@@ -101,12 +101,55 @@ Notes:
 
 See [src/examples/structured_extraction](src/examples/structured_extraction) for the full example.
 
+## Snapshot streaming (schema-constrained)
+
+`stream_response_with_schema` combines guided generation with streaming:
+each callback receives the **full cumulative partial JSON** of the value so
+far — always a structurally valid prefix of the schema, not a text delta.
+
+```moonbit
+let schema = @ui_ast.dashboard_schema()
+let final_json = session.stream_response_with_schema(
+  "今月の進捗をまとめて",
+  schema,
+  on_snapshot=fn(snapshot) { println(snapshot) },
+)
+```
+
+For async contexts where a sync callback won't do (e.g. an HTTP handler),
+`start_structured_stream` returns the stream ref and you drive the
+`@ffi.read_response` loop yourself.
+
+> This requires two C binding functions
+> (`FMLanguageModelSessionStreamResponseWithSchema`,
+> `FMLanguageModelSessionStructuredResponseStreamIterate`) that are not yet in
+> upstream `python-apple-fm-sdk` — they are added as a local patch to
+> `foundation-models-c` in this checkout. Rebuild with
+> `swift build -c release` in `../python-apple-fm-sdk/foundation-models-c`.
+
+### Generative UI demo
+
+`ui_dashboard_demo` is a self-contained PoC: a MoonBit-native HTTP/SSE server
+(no Node, no network, on-device model) that turns a natural-language request
+into a dashboard UI tree, streamed as snapshots and rendered live in the
+browser with skeleton placeholders, metric cards, lists, and SVG bar charts.
+
+```sh
+moon run src/examples/ui_dashboard_demo --target native
+# then open http://127.0.0.1:8080 and ask e.g. 「今月の進捗まとめて」
+```
+
+The UI AST (`src/ui_ast`) is a flat discriminated union
+(`text` / `metric` / `bar_chart` / `list`) kept shallow on purpose — the
+on-device model is small. `PartialDashboard` is a tolerant decoder for
+partial snapshots (every field optional, arrays default empty).
+
 ## API overview
 
 | Package | Contents |
 |---|---|
 | `core` | `SystemLanguageModel`, `UseCase`, `Guardrails`, availability checks |
-| `session` | `LanguageModelSession` — `respond`, `stream_response`, `respond_with_schema`, `respond_with_json_schema`, `extract`, `extract_with_json_schema` |
+| `session` | `LanguageModelSession` — `respond`, `stream_response`, `stream_response_with_schema`, `respond_with_schema`, `respond_with_json_schema`, `extract`, `extract_with_json_schema` |
 | `schema` | `GenerationSchema` — structured output schema definition |
 | `property` | `Property` — schema field definition |
 | `guide` | `GenerationGuide` — field constraints (enum, regex, range, …) |
@@ -116,6 +159,7 @@ See [src/examples/structured_extraction](src/examples/structured_extraction) for
 | `tool` | `Tool` trait for function calling |
 | `transcript` | Session history management |
 | `errors` | `GenerationError` and friends |
+| `ui_ast` | Dashboard UI AST schema + tolerant partial-snapshot decoder (demo) |
 
 ## Examples
 
@@ -125,6 +169,8 @@ See [src/examples/structured_extraction](src/examples/structured_extraction) for
 | Streaming | `moon run src/examples/streaming_example --target native` |
 | Structured extraction | `moon run src/examples/structured_extraction --target native` |
 | Transcript processing | `moon run src/examples/transcript_processing --target native` |
+| Snapshot streaming (CLI) | `moon run src/examples/structured_streaming --target native` |
+| Generative UI demo (browser) | `moon run src/examples/ui_dashboard_demo --target native` |
 
 ## Development
 

@@ -89,6 +89,21 @@ extern "c" fn moonbit_fm_stream_start_iterate_fn(
 ) = "moonbit_fm_stream_start_iterate"
 
 ///|
+#borrow(session, prompt, schema, options_json)
+extern "c" fn moonbit_fm_session_stream_response_with_schema_fn(
+  session : FMLanguageModelSessionRef,
+  prompt : FMComposedPromptRef,
+  schema : FMGenerationSchemaRef,
+  options_json : Bytes
+) -> FMLanguageModelSessionResponseStreamRef = "moonbit_fm_session_stream_response_with_schema"
+
+///|
+#borrow(stream)
+extern "c" fn moonbit_fm_structured_stream_start_iterate_fn(
+  stream : FMLanguageModelSessionResponseStreamRef
+) = "moonbit_fm_structured_stream_start_iterate"
+
+///|
 pub fn session_create_default() -> FMLanguageModelSessionRef {
   fm_language_model_session_create_default()
 }
@@ -182,6 +197,25 @@ pub fn stream_start_iterate(
   stream : FMLanguageModelSessionResponseStreamRef
 ) -> Unit {
   moonbit_fm_stream_start_iterate_fn(stream)
+}
+
+///|
+pub fn session_stream_response_with_schema(
+  session : FMLanguageModelSessionRef,
+  prompt : FMComposedPromptRef,
+  schema : FMGenerationSchemaRef,
+  options_json : Bytes
+) -> FMLanguageModelSessionResponseStreamRef {
+  moonbit_fm_session_stream_response_with_schema_fn(
+    session, prompt, schema, options_json,
+  )
+}
+
+///|
+pub fn structured_stream_start_iterate(
+  stream : FMLanguageModelSessionResponseStreamRef
+) -> Unit {
+  moonbit_fm_structured_stream_start_iterate_fn(stream)
 }
 
 ///|

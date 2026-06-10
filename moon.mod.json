@@ -1,6 +1,9 @@
 {
   "name": "fu2hito/apple_fm_sdk",
   "version": "0.1.0",
+  "deps": {
+    "moonbitlang/async": "0.19.3"
+  },
   "source": "src",
   "preferred-target": "native"
 }

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ui-dashboard-demo",
+      "runtimeExecutable": "moon",
+      "runtimeArgs": ["run", "src/examples/ui_dashboard_demo", "--target", "native"],
+      "port": 8080
+    }
+  ]
+}
