@@ -129,6 +129,8 @@ For async contexts where a sync callback won't do (e.g. an HTTP handler),
 
 ### Generative UI demo
 
+![Generative UI demo: a dashboard streams in as the on-device model generates it](docs/demo.gif)
+
 `ui_dashboard_demo` is a self-contained PoC: a MoonBit-native HTTP/SSE server
 (no Node, no network, on-device model) that turns a natural-language request
 into a dashboard UI tree, streamed as snapshots and rendered live in the
@@ -178,3 +180,7 @@ partial snapshots (every field optional, arrays default empty).
 moon check                 # type-check everything
 moon test --target native  # run tests (requires the C library; model not needed)
 ```
+
+To re-record `docs/demo.gif`: start the demo server, then
+`cd scripts && npm install && node record-demo.mjs` (frames land in
+`/tmp/demo-frames`; ffmpeg palette commands are in the script header comment).
