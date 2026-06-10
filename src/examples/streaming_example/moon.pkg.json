@@ -1,0 +1,7 @@
+{
+  "is-main": true,
+  "import": [
+    "fu2hito/apple_fm_sdk/core",
+    "fu2hito/apple_fm_sdk/session"
+  ]
+}
