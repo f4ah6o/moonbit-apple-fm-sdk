@@ -5,7 +5,7 @@
   ],
   "link": {
     "native": {
-      "cc-link-flags": "-L/Users/fu2hito/src/apple-fm-sdk/python-apple-fm-sdk/foundation-models-c/.build/release -lFoundationModels -Wl,-rpath,/Users/fu2hito/src/apple-fm-sdk/python-apple-fm-sdk/foundation-models-c/.build/release"
+      "cc-link-flags": "-Lvendor/foundation-models-c/.build/release -lFoundationModelsStatic"
     }
   }
 }
