@@ -1,6 +1,6 @@
 {
   "import": [
-    "fu2hito/apple_fm_sdk/errors",
+    "ringo-fm/ringo_fm_sdk/errors",
     "moonbitlang/core/encoding/utf8"
   ],
   "native-stub": ["ffi_stub.c"],

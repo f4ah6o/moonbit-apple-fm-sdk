@@ -221,7 +221,7 @@ moon test --target native  # run tests (requires the C library; model not needed
 
 The native library is statically linked from
 `vendor/foundation-models-c/.build/release`, so no sibling checkout of
-`python-apple-fm-sdk` is required.
+`ringo-fm-bridge` is required.
 
 To re-record `docs/demo.gif`: start the demo server, then
 `cd scripts && npm install && node record-demo.mjs` (frames land in
