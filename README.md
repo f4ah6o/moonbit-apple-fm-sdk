@@ -150,6 +150,39 @@ The UI AST (`src/ui_ast`) is a flat discriminated union
 on-device model is small. `PartialDashboard` is a tolerant decoder for
 partial snapshots (every field optional, arrays default empty).
 
+## Schema Discovery
+
+`@schema_discovery.discover_schema` uses guided generation to infer a
+reviewable schema candidate from text, JSON, or already-extracted documents.
+The response is exposed as `Json` so applications can decode it into their own
+types while preserving the shared SDK wire shape.
+
+```moonbit
+let opts = @schema_discovery.DiscoveryOptions::default()
+let response = @schema_discovery.discover_schema(
+  session,
+  @schema_discovery.DiscoverSchemaRequest::{
+    documents: [
+      @schema_discovery.DiscoveryDocument::{
+        id: "doc-1",
+        source: @schema_discovery.DiscoveryDocumentSource::{
+          source_type: "text",
+          media_type: None,
+          name: None,
+          content: Some("請求日 2026-01-01\n合計 12,000円"),
+          uri: None,
+        },
+        metadata: None,
+      },
+    ],
+    hints: None,
+    options: Some(opts),
+    existing_schema: None,
+  },
+)
+println(response.json().stringify())
+```
+
 ## API overview
 
 | Package | Contents |
@@ -165,6 +198,7 @@ partial snapshots (every field optional, arrays default empty).
 | `tool` | `Tool` trait for function calling |
 | `transcript` | Session history management |
 | `errors` | `GenerationError` and friends |
+| `schema_discovery` | LLM-backed schema candidate discovery and JSON Schema export |
 | `ui_ast` | Dashboard UI AST schema + tolerant partial-snapshot decoder (demo) |
 
 ## Examples
