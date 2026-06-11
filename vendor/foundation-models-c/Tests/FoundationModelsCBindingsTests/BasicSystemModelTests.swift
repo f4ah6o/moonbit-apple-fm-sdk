@@ -35,6 +35,21 @@ import Synchronization
     FMRelease(model)
   }
 
+  @Test func testPrewarm() async throws {
+    let model = FMSystemLanguageModelGetDefault()
+    let session = FMLanguageModelSessionCreateFromSystemLanguageModel(model, nil, nil, 0)
+
+    // Prewarm is a fire-and-forget hint; both forms must be safe to call
+    // regardless of model availability and must not flip the session into a
+    // responding state.
+    FMLanguageModelSessionPrewarm(session, nil)
+    FMLanguageModelSessionPrewarm(session, "You are a helpful assistant.")
+    #expect(!FMLanguageModelSessionIsResponding(session))
+
+    FMRelease(session)
+    FMRelease(model)
+  }
+
   @Test(.enabled(if: ProcessInfo.processInfo.environment["RUN_LIVE_FM_TESTS"] == "1" && SystemLanguageModel.default.isAvailable))
   func testResponse() async throws {
     let model = FMSystemLanguageModelGetDefault()

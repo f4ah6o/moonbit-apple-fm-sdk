@@ -27,6 +27,8 @@ extern FMLanguageModelSessionRef FMLanguageModelSessionCreateFromSystemLanguageM
 extern FMLanguageModelSessionRef FMLanguageModelSessionCreateFromTranscript(
     FMLanguageModelSessionRef transcriptSession, FMSystemLanguageModelRef model,
     FMBridgedToolRef *tools, int toolCount);
+extern void FMLanguageModelSessionPrewarm(
+    FMLanguageModelSessionRef session, const char *promptPrefix);
 extern FMTaskRef FMLanguageModelSessionRespond(
     FMLanguageModelSessionRef session, FMComposedPromptRef prompt,
     const char *optionsJSON, void *userInfo,
@@ -153,6 +155,17 @@ FMLanguageModelSessionRef moonbit_fm_session_create(
 ) {
     return FMLanguageModelSessionCreateFromSystemLanguageModel(
         model, instructions, NULL, tool_count);
+}
+
+void moonbit_fm_session_prewarm(
+    FMLanguageModelSessionRef session,
+    const char *prompt_prefix
+) {
+    /* MoonBit passes strings as NUL-terminated Bytes and cannot pass NULL;
+       an empty prefix means "no prefix". */
+    FMLanguageModelSessionPrewarm(
+        session,
+        (prompt_prefix != NULL && prompt_prefix[0] != '\0') ? prompt_prefix : NULL);
 }
 
 FMTaskRef moonbit_fm_session_respond(

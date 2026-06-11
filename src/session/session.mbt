@@ -42,6 +42,18 @@ pub fn LanguageModelSession::reset(self : LanguageModelSession) -> Unit {
 }
 
 ///|
+/// Ask the system to pre-load resources for this session so the first request
+/// has lower latency. `prompt_prefix`, when non-empty, is the prefix the next
+/// prompt is expected to start with. Prewarm is a fire-and-forget hint and is
+/// safe to call regardless of model availability.
+pub fn LanguageModelSession::prewarm(
+  self : LanguageModelSession,
+  prompt_prefix~ : String = ""
+) -> Unit {
+  @ffi.session_prewarm(self.ptr, @ffi.string_to_utf8_bytes(prompt_prefix))
+}
+
+///|
 pub fn LanguageModelSession::respond(
   self : LanguageModelSession,
   prompt : String,

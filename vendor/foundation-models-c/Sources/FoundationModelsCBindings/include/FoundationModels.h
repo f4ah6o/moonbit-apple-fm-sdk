@@ -72,6 +72,7 @@ bool FMComposedPromptAddAttachment(FMComposedPrompt _Nonnull composedPrompt, con
 FMLanguageModelSessionRef _Nonnull FMLanguageModelSessionCreateFromTranscript(FMLanguageModelSessionRef _Nonnull transcriptSession, FMSystemLanguageModelRef _Nullable model, FMBridgedToolRef * _Nullable tools, int toolCount);
 bool FMLanguageModelSessionIsResponding(FMLanguageModelSessionRef _Nonnull session);
 void FMLanguageModelSessionReset(FMLanguageModelSessionRef _Nonnull session);
+void FMLanguageModelSessionPrewarm(FMLanguageModelSessionRef _Nonnull session, const char * _Nullable promptPrefix);
 FMTaskRef _Nonnull FMLanguageModelSessionRespond(FMLanguageModelSessionRef _Nonnull session, FMComposedPrompt _Nonnull composedPrompt, const char * _Nullable optionsJSON, void * _Nullable userInfo, FMLanguageModelSessionResponseCallback callback);
 FMLanguageModelSessionResponseStreamRef _Nonnull FMLanguageModelSessionStreamResponse(FMLanguageModelSessionRef _Nonnull session, FMComposedPrompt _Nonnull composedPrompt, const char * _Nullable optionsJSON);
 void FMLanguageModelSessionResponseStreamIterate(FMLanguageModelSessionResponseStreamRef _Nonnull stream, void * _Nullable userInfo, FMLanguageModelSessionResponseCallback callback);

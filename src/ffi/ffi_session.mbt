@@ -22,6 +22,13 @@ extern "c" fn fm_language_model_session_reset(
 ) = "FMLanguageModelSessionReset"
 
 ///|
+#borrow(session, prompt_prefix)
+extern "c" fn moonbit_fm_session_prewarm_fn(
+  session : FMLanguageModelSessionRef,
+  prompt_prefix : Bytes
+) = "moonbit_fm_session_prewarm"
+
+///|
 #borrow(json_string, out_error_code, out_error_description)
 extern "c" fn fm_transcript_create_from_json_string(
   json_string : Bytes,
@@ -126,6 +133,15 @@ pub fn session_is_responding(
 ///|
 pub fn session_reset(session : FMLanguageModelSessionRef) -> Unit {
   fm_language_model_session_reset(session)
+}
+
+///|
+/// Prewarm the session. An empty `prompt_prefix` means "no prefix".
+pub fn session_prewarm(
+  session : FMLanguageModelSessionRef,
+  prompt_prefix : Bytes
+) -> Unit {
+  moonbit_fm_session_prewarm_fn(session, prompt_prefix)
 }
 
 ///|

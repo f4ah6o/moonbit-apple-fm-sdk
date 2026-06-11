@@ -302,6 +302,26 @@ public func FMLanguageModelSessionReset(session: FMLanguageModelSessionRef) {
   _ = session.isResponding
 }
 
+/// Requests that the system pre-load resources for this session so the first
+/// request has lower latency. Mirrors `LanguageModelSession.prewarm(promptPrefix:)`.
+///
+/// - Parameters:
+///   - session: The language model session to prewarm.
+///   - promptPrefix: Optional UTF-8 prompt prefix the next request is expected
+///     to start with. Borrowed for the duration of the call.
+@_cdecl("FMLanguageModelSessionPrewarm")
+public func FMLanguageModelSessionPrewarm(
+  session: FMLanguageModelSessionRef,
+  promptPrefix: UnsafePointer<CChar>?
+) {
+  let session = Unmanaged<LanguageModelSession>.fromOpaque(session).takeUnretainedValue()
+  if let promptPrefix {
+    session.prewarm(promptPrefix: Prompt(String(cString: promptPrefix)))
+  } else {
+    session.prewarm()
+  }
+}
+
 private struct UnsafeSendableUserInfo: @unchecked Sendable {
   var pointer: UnsafeMutableRawPointer?
 }
