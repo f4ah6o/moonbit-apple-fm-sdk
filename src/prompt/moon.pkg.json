@@ -1,7 +1,7 @@
 {
   "import": [
-    "fu2hito/apple_fm_sdk/ffi",
-    "fu2hito/apple_fm_sdk/errors"
+    "ringo-fm/ringo_fm_sdk/ffi",
+    "ringo-fm/ringo_fm_sdk/errors"
   ],
   "link": {
     "native": {

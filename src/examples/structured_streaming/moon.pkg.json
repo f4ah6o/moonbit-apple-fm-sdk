@@ -1,9 +1,9 @@
 {
   "is-main": true,
   "import": [
-    "fu2hito/apple_fm_sdk/core",
-    "fu2hito/apple_fm_sdk/session",
-    "fu2hito/apple_fm_sdk/ui_ast",
+    "ringo-fm/ringo_fm_sdk/core",
+    "ringo-fm/ringo_fm_sdk/session",
+    "ringo-fm/ringo_fm_sdk/ui_ast",
     "moonbitlang/core/json"
   ],
   "link": {

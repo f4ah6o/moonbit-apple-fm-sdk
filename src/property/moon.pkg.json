@@ -1,8 +1,8 @@
 {
   "import": [
-    "fu2hito/apple_fm_sdk/ffi",
-    "fu2hito/apple_fm_sdk/guide",
-    "fu2hito/apple_fm_sdk/type_conversion"
+    "ringo-fm/ringo_fm_sdk/ffi",
+    "ringo-fm/ringo_fm_sdk/guide",
+    "ringo-fm/ringo_fm_sdk/type_conversion"
   ],
   "link": {
     "native": {

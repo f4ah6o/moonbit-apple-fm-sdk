@@ -83,6 +83,35 @@ public func FMComposedPromptAddAttachment(
   }
 }
 
+@_cdecl("FMComposedPromptAddImage")
+public func FMComposedPromptAddImage(
+  composedPrompt: FMComposedPrompt,
+  imagePath: UnsafePointer<CChar>,
+  error: UnsafeMutablePointer<FMComposedPromptAddImageError>?
+) -> Bool {
+  FMComposedPromptAddAttachment(
+    composedPrompt: composedPrompt,
+    imagePath: imagePath,
+    label: nil,
+    error: error
+  )
+}
+
+@_cdecl("FMComposedPromptAddIdentifiedImage")
+public func FMComposedPromptAddIdentifiedImage(
+  composedPrompt: FMComposedPrompt,
+  imagePath: UnsafePointer<CChar>,
+  imageIdentifier: UnsafePointer<CChar>,
+  error: UnsafeMutablePointer<FMComposedPromptAddImageError>?
+) -> Bool {
+  FMComposedPromptAddAttachment(
+    composedPrompt: composedPrompt,
+    imagePath: imagePath,
+    label: imageIdentifier,
+    error: error
+  )
+}
+
 final class TaskBox {
   let task: Task<(), Never>
   init(_ task: Task<(), Never>) {

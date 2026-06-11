@@ -1,16 +1,16 @@
 {
   "import": [
-    "fu2hito/apple_fm_sdk/errors",
-    "fu2hito/apple_fm_sdk/core",
-    "fu2hito/apple_fm_sdk/prompt",
-    "fu2hito/apple_fm_sdk/options",
-    "fu2hito/apple_fm_sdk/guide",
-    "fu2hito/apple_fm_sdk/schema",
-    "fu2hito/apple_fm_sdk/generable",
-    "fu2hito/apple_fm_sdk/session",
-    "fu2hito/apple_fm_sdk/schema_discovery",
-    "fu2hito/apple_fm_sdk/transcript",
-    "fu2hito/apple_fm_sdk/tool"
+    "ringo-fm/ringo_fm_sdk/errors",
+    "ringo-fm/ringo_fm_sdk/core",
+    "ringo-fm/ringo_fm_sdk/prompt",
+    "ringo-fm/ringo_fm_sdk/options",
+    "ringo-fm/ringo_fm_sdk/guide",
+    "ringo-fm/ringo_fm_sdk/schema",
+    "ringo-fm/ringo_fm_sdk/generable",
+    "ringo-fm/ringo_fm_sdk/session",
+    "ringo-fm/ringo_fm_sdk/schema_discovery",
+    "ringo-fm/ringo_fm_sdk/transcript",
+    "ringo-fm/ringo_fm_sdk/tool"
   ],
   "link": {
     "native": {

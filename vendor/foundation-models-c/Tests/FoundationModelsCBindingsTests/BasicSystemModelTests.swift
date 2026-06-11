@@ -4,6 +4,7 @@ Copyright (C) 2026 Apple Inc. All Rights Reserved.
 */
 
 import Testing
+import Foundation
 import FoundationModels
 import FoundationModelsCDeclarations
 import Synchronization
@@ -34,7 +35,7 @@ import Synchronization
     FMRelease(model)
   }
 
-  @Test(.enabled(if: SystemLanguageModel.default.isAvailable))
+  @Test(.enabled(if: ProcessInfo.processInfo.environment["RUN_LIVE_FM_TESTS"] == "1" && SystemLanguageModel.default.isAvailable))
   func testResponse() async throws {
     let model = FMSystemLanguageModelGetDefault()
     let session = FMLanguageModelSessionCreateFromSystemLanguageModel(
@@ -43,11 +44,15 @@ import Synchronization
       nil,
       0
     )
-    var isResponding: Bool = true
-    FMLanguageModelSessionRespond(
+    let prompt = FMComposedPromptInitialize()
+    FMComposedPromptAddText(prompt, "What programming language is better, Swift or C?")
+    let isResponding = UnsafeMutablePointer<Bool>.allocate(capacity: 1)
+    isResponding.initialize(to: true)
+    let task = FMLanguageModelSessionRespond(
       session,
-      "What programming language is better, Swift or C?",
-      &isResponding
+      prompt,
+      nil,
+      isResponding
     ) { status, content, length, userInfo in
       #expect(status == 0)
       let content = String(cString: try! #require(content))
@@ -56,7 +61,10 @@ import Synchronization
       #expect(strlen(content) == length)
       userInfo?.bindMemory(to: Bool.self, capacity: 1).pointee = false
     }
-    while isResponding {}
+    while isResponding.pointee {}
+    isResponding.deinitialize(count: 1)
+    isResponding.deallocate()
+    FMRelease(task)
     FMRelease(session)
     FMRelease(model)
   }

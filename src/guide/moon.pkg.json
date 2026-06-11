@@ -1,7 +1,7 @@
 {
   "import": [
     "moonbitlang/core/debug",
-    "fu2hito/apple_fm_sdk/ffi"
+    "ringo-fm/ringo_fm_sdk/ffi"
   ],
   "link": {
     "native": {
