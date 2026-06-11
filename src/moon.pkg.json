@@ -8,6 +8,7 @@
     "fu2hito/apple_fm_sdk/schema",
     "fu2hito/apple_fm_sdk/generable",
     "fu2hito/apple_fm_sdk/session",
+    "fu2hito/apple_fm_sdk/schema_discovery",
     "fu2hito/apple_fm_sdk/transcript",
     "fu2hito/apple_fm_sdk/tool"
   ],
