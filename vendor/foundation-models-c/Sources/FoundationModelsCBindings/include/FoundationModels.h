@@ -64,6 +64,7 @@ FMLanguageModelSessionRef _Nonnull FMLanguageModelSessionCreateFromSystemLanguag
 
 FMComposedPrompt _Nonnull FMComposedPromptInitialize(void);
 void FMComposedPromptAddText(FMComposedPrompt _Nonnull composedPrompt, const char * _Nonnull text);
+char * _Nullable FMComposedPromptGetTextContent(FMComposedPrompt _Nonnull composedPrompt);
 bool FMComposedPromptAddImage(FMComposedPrompt _Nonnull composedPrompt, const char * _Nonnull imagePath, FMComposedPromptAddImageError * _Nullable error);
 bool FMComposedPromptAddIdentifiedImage(FMComposedPrompt _Nonnull composedPrompt, const char * _Nonnull imagePath, const char * _Nonnull imageIdentifier, FMComposedPromptAddImageError * _Nullable error);
 bool FMComposedPromptAddAttachment(FMComposedPrompt _Nonnull composedPrompt, const char * _Nonnull imagePath, const char * _Nullable label, FMComposedPromptAddImageError * _Nullable error);
@@ -82,6 +83,7 @@ void FMLanguageModelSessionStructuredResponseStreamIterate(FMLanguageModelSessio
 
 FMLanguageModelSessionRef _Nullable FMTranscriptCreateFromJSONString(const char * _Nonnull jsonString, int * _Nullable outErrorCode, char * * _Nullable outErrorDescription);
 char * _Nullable FMLanguageModelSessionGetTranscriptJSONString(FMLanguageModelSessionRef _Nonnull session, int * _Nullable outErrorCode, char * * _Nullable outErrorDescription);
+int FMLanguageModelSessionGetTranscriptEntryCount(FMLanguageModelSessionRef _Nonnull session);
 // MARK: - GenerationSchema functions
 
 FMGenerationSchemaRef _Nonnull FMGenerationSchemaCreate(const char * _Nonnull name, const char * _Nullable description);
@@ -102,7 +104,12 @@ char * _Nullable FMGenerationSchemaGetJSONString(FMGenerationSchemaRef _Nonnull 
 FMGeneratedContentRef _Nullable FMGeneratedContentCreateFromJSON(const char * _Nonnull jsonString, int * _Nullable outErrorCode, char * * _Nullable outErrorDescription);
 char * _Nullable FMGeneratedContentGetJSONString(FMGeneratedContentRef _Nonnull content);
 char * _Nullable FMGeneratedContentGetPropertyValue(FMGeneratedContentRef _Nonnull content, const char * _Nonnull propertyName, int * _Nullable outErrorCode, char * * _Nullable outErrorDescription);
+bool FMGeneratedContentGetPropertyValueAsDouble(FMGeneratedContentRef _Nonnull content, const char * _Nonnull propertyName, double * _Nullable outValue, int * _Nullable outErrorCode);
+bool FMGeneratedContentGetPropertyValueAsBool(FMGeneratedContentRef _Nonnull content, const char * _Nonnull propertyName, bool * _Nullable outValue, int * _Nullable outErrorCode);
+bool FMGeneratedContentGetPropertyValueAsInt(FMGeneratedContentRef _Nonnull content, const char * _Nonnull propertyName, int64_t * _Nullable outValue, int * _Nullable outErrorCode);
 bool FMGeneratedContentIsComplete(FMGeneratedContentRef _Nonnull content);
+bool FMGeneratedContentHasProperty(FMGeneratedContentRef _Nonnull content, const char * _Nonnull propertyName);
+char * _Nullable FMGeneratedContentGetPropertyNames(FMGeneratedContentRef _Nonnull content);
 // MARK: - Structured generation session functions
 
 FMTaskRef _Nonnull FMLanguageModelSessionRespondWithSchema(FMLanguageModelSessionRef _Nonnull session, FMComposedPrompt _Nonnull composedPrompt, FMGenerationSchemaRef _Nonnull schema, const char * _Nullable optionsJSON, void * _Nullable userInfo, FMLanguageModelSessionStructuredResponseCallback callback);

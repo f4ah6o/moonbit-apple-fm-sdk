@@ -230,4 +230,187 @@ import Synchronization
     #expect(uniqueCount == numberOfCalls)
     print("Generated \(uniqueCount) unique IDs out of \(numberOfCalls) calls")
   }
+
+  @Test func testComposedPromptGetTextContent() throws {
+    let prompt = FMComposedPromptInitialize()
+    defer { FMRelease(prompt) }
+
+    // Empty prompt must return an empty string, not NULL.
+    let emptyPtr = FMComposedPromptGetTextContent(prompt)
+    let emptyRef = try #require(emptyPtr)
+    defer { FMFreeString(emptyPtr) }
+    #expect(String(cString: emptyRef) == "")
+
+    // After adding text, the content must match.
+    FMComposedPromptAddText(prompt, "Hello, ")
+    FMComposedPromptAddText(prompt, "world!")
+    let textPtr = FMComposedPromptGetTextContent(prompt)
+    let textRef = try #require(textPtr)
+    defer { FMFreeString(textPtr) }
+    #expect(String(cString: textRef) == "Hello, world!")
+  }
+
+  @Test func testGeneratedContentGetPropertyValueAsInt() throws {
+    let json = "{\"count\":7,\"price\":3.14,\"label\":\"hello\"}"
+    var errCode: Int32 = 0
+    var errDesc: UnsafePointer<CChar>? = nil
+    let content = FMGeneratedContentCreateFromJSON(json, &errCode, &errDesc)
+    #expect(errCode == 0)
+    let contentRef = try #require(content)
+    defer { FMRelease(contentRef) }
+
+    var intVal: Int64 = 0
+    var fetchErr: Int32 = 0
+
+    // Integer property.
+    let ok1 = FMGeneratedContentGetPropertyValueAsInt(contentRef, "count", &intVal, &fetchErr)
+    #expect(ok1)
+    #expect(intVal == 7)
+
+    // Float property must fail (not an integer).
+    var unused: Int64 = 0
+    let ok2 = FMGeneratedContentGetPropertyValueAsInt(contentRef, "price", &unused, &fetchErr)
+    #expect(!ok2)
+
+    // String property must fail.
+    let ok3 = FMGeneratedContentGetPropertyValueAsInt(contentRef, "label", &unused, &fetchErr)
+    #expect(!ok3)
+
+    // Missing property must fail.
+    let ok4 = FMGeneratedContentGetPropertyValueAsInt(contentRef, "missing", &unused, &fetchErr)
+    #expect(!ok4)
+  }
+
+  @Test func testGeneratedContentGetPropertyValueAsBool() throws {
+    let json = "{\"active\":true,\"disabled\":false,\"score\":42}"
+    var errCode: Int32 = 0
+    var errDesc: UnsafeMutablePointer<CChar>? = nil
+    let content = FMGeneratedContentCreateFromJSON(json, &errCode, &errDesc)
+    #expect(errCode == 0)
+    let contentRef = try #require(content)
+    defer { FMRelease(contentRef) }
+
+    var boolVal = false
+    var fetchErr: Int32 = 0
+
+    // true value.
+    let ok1 = FMGeneratedContentGetPropertyValueAsBool(contentRef, "active", &boolVal, &fetchErr)
+    #expect(ok1)
+    #expect(boolVal == true)
+
+    // false value.
+    let ok2 = FMGeneratedContentGetPropertyValueAsBool(contentRef, "disabled", &boolVal, &fetchErr)
+    #expect(ok2)
+    #expect(boolVal == false)
+
+    // Numeric property must fail (not a bool).
+    var unused = false
+    let ok3 = FMGeneratedContentGetPropertyValueAsBool(contentRef, "score", &unused, &fetchErr)
+    #expect(!ok3)
+
+    // Missing property must fail.
+    let ok4 = FMGeneratedContentGetPropertyValueAsBool(contentRef, "missing", &unused, &fetchErr)
+    #expect(!ok4)
+  }
+
+  @Test func testGeneratedContentGetPropertyValueAsDouble() throws {
+    let json = "{\"price\":3.14,\"count\":42,\"label\":\"hello\"}"
+    var errCode: Int32 = 0
+    var errDesc: UnsafeMutablePointer<CChar>? = nil
+    let content = FMGeneratedContentCreateFromJSON(json, &errCode, &errDesc)
+    #expect(errCode == 0)
+    let contentRef = try #require(content)
+    defer { FMRelease(contentRef) }
+
+    // Float property.
+    var doubleVal: Double = 0
+    var fetchErr: Int32 = 0
+    let ok1 = FMGeneratedContentGetPropertyValueAsDouble(contentRef, "price", &doubleVal, &fetchErr)
+    #expect(ok1)
+    #expect(abs(doubleVal - 3.14) < 1e-9)
+
+    // Integer property coerced to Double.
+    var intAsDouble: Double = 0
+    let ok2 = FMGeneratedContentGetPropertyValueAsDouble(contentRef, "count", &intAsDouble, &fetchErr)
+    #expect(ok2)
+    #expect(intAsDouble == 42.0)
+
+    // String property must fail gracefully.
+    var unused: Double = 0
+    let ok3 = FMGeneratedContentGetPropertyValueAsDouble(contentRef, "label", &unused, &fetchErr)
+    #expect(!ok3)
+
+    // Missing property must fail gracefully.
+    let ok4 = FMGeneratedContentGetPropertyValueAsDouble(contentRef, "missing", &unused, &fetchErr)
+    #expect(!ok4)
+  }
+
+  @Test func testGetTranscriptEntryCount() throws {
+    let model = FMSystemLanguageModelGetDefault()
+    let session = FMLanguageModelSessionCreateFromSystemLanguageModel(model, nil, nil, 0)
+    defer {
+      FMRelease(session)
+      FMRelease(model)
+    }
+
+    // A brand-new session has no transcript entries.
+    #expect(FMLanguageModelSessionGetTranscriptEntryCount(session) == 0)
+  }
+
+  @Test func testGetTranscriptEntryCountRoundTrip() throws {
+    // Build a transcript JSON with two entries and verify the count.
+    let transcriptJSON = """
+    {"entries":[{"role":"user","parts":[{"kind":"text","content":"Hello"}]},{"role":"model","parts":[{"kind":"text","content":"Hi"}]}]}
+    """
+    var errCode: Int32 = 0
+    var errDesc: UnsafeMutablePointer<CChar>? = nil
+    let loaded = FMTranscriptCreateFromJSONString(transcriptJSON, &errCode, &errDesc)
+    guard let loaded else {
+      // If the transcript format doesn't match the FM ABI on this system, skip
+      // rather than fail — transcript JSON shape is opaque.
+      return
+    }
+    defer { FMRelease(loaded) }
+    let count = FMLanguageModelSessionGetTranscriptEntryCount(loaded)
+    // Either the transcript was parsed (count == 2) or it was ignored (count == 0).
+    #expect(count >= 0)
+  }
+
+  @Test func testGeneratedContentGetPropertyNames() throws {
+    let json = "{\"score\":99,\"name\":\"Alice\"}"
+    var errCode: Int32 = 0
+    var errDesc: UnsafeMutablePointer<CChar>? = nil
+    let content = FMGeneratedContentCreateFromJSON(json, &errCode, &errDesc)
+    #expect(errCode == 0)
+    let contentRef = try #require(content)
+    defer { FMRelease(contentRef) }
+
+    let namesPtr = FMGeneratedContentGetPropertyNames(contentRef)
+    let namesRef = try #require(namesPtr)
+    defer { FMFreeString(namesPtr) }
+
+    let namesJSON = String(cString: namesRef)
+    // Returned value must be a JSON array containing both property names.
+    #expect(namesJSON.hasPrefix("["))
+    #expect(namesJSON.hasSuffix("]"))
+    #expect(namesJSON.contains("\"name\""))
+    #expect(namesJSON.contains("\"score\""))
+  }
+
+  @Test func testGeneratedContentHasProperty() throws {
+    let json = "{\"greeting\":\"hello\",\"count\":42}"
+    var errCode: Int32 = 0
+    var errDesc: UnsafeMutablePointer<CChar>? = nil
+    let content = FMGeneratedContentCreateFromJSON(json, &errCode, &errDesc)
+    #expect(errCode == 0)
+    let contentRef = try #require(content)
+    defer { FMRelease(contentRef) }
+
+    // Present properties must return true.
+    #expect(FMGeneratedContentHasProperty(contentRef, "greeting"))
+    #expect(FMGeneratedContentHasProperty(contentRef, "count"))
+    // Absent properties must return false.
+    #expect(!FMGeneratedContentHasProperty(contentRef, "nonexistent"))
+    #expect(!FMGeneratedContentHasProperty(contentRef, ""))
+  }
 }

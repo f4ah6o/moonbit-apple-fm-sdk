@@ -2,6 +2,10 @@
 extern "c" fn fm_language_model_session_create_default() -> FMLanguageModelSessionRef = "FMLanguageModelSessionCreateDefault"
 
 ///|
+#borrow(tool)
+extern "c" fn moonbit_fm_stage_tool_fn(tool : FMBridgedToolRef) = "moonbit_fm_stage_tool"
+
+///|
 #borrow(model, instructions)
 extern "c" fn moonbit_fm_session_create_fn(
   model : FMSystemLanguageModelRef,
@@ -116,11 +120,28 @@ pub fn session_create_default() -> FMLanguageModelSessionRef {
 }
 
 ///|
+pub fn stage_tool(tool : FMBridgedToolRef) -> Unit {
+  moonbit_fm_stage_tool_fn(tool)
+}
+
+///|
 pub fn session_create(
   model : FMSystemLanguageModelRef,
   instructions : Bytes
 ) -> FMLanguageModelSessionRef {
   moonbit_fm_session_create_fn(model, instructions, 0)
+}
+
+///|
+pub fn session_create_with_tools(
+  model : FMSystemLanguageModelRef,
+  instructions : Bytes,
+  tools : Array[FMBridgedToolRef]
+) -> FMLanguageModelSessionRef {
+  for tool in tools {
+    moonbit_fm_stage_tool_fn(tool)
+  }
+  moonbit_fm_session_create_fn(model, instructions, tools.length())
 }
 
 ///|

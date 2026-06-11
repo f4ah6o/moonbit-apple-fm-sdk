@@ -146,6 +146,32 @@ int moonbit_fm_read_response(char *out_content, size_t max_len, size_t *out_actu
     return hdr.status;
 }
 
+/* ===== Pending-tools staging area ===== */
+/*
+ * MoonBit cannot pass an array of opaque pointers directly via FFI, so we use
+ * a two-phase API: callers push tool refs one by one via
+ * moonbit_fm_stage_tool(), then pass tool_count when creating the session.
+ * The staged array is consumed (cleared) by moonbit_fm_session_create /
+ * moonbit_fm_session_create_from_transcript.
+ */
+
+#define MOONBIT_FM_MAX_TOOLS 32
+
+static FMBridgedToolRef staged_tools[MOONBIT_FM_MAX_TOOLS];
+static int staged_tool_count = 0;
+
+void moonbit_fm_stage_tool(FMBridgedToolRef tool) {
+    if (staged_tool_count < MOONBIT_FM_MAX_TOOLS) {
+        staged_tools[staged_tool_count++] = tool;
+    }
+}
+
+static void consume_staged_tools(FMBridgedToolRef **out_tools, int *out_count) {
+    *out_tools = staged_tool_count > 0 ? staged_tools : NULL;
+    *out_count = staged_tool_count;
+    staged_tool_count = 0;
+}
+
 /* ===== Session wrappers ===== */
 
 FMLanguageModelSessionRef moonbit_fm_session_create(
@@ -153,8 +179,13 @@ FMLanguageModelSessionRef moonbit_fm_session_create(
     const char *instructions,
     int tool_count
 ) {
+    FMBridgedToolRef *tools;
+    int count;
+    consume_staged_tools(&tools, &count);
+    /* tool_count from caller is the expected count; use the staged count. */
+    (void)tool_count;
     return FMLanguageModelSessionCreateFromSystemLanguageModel(
-        model, instructions, NULL, tool_count);
+        model, instructions, tools, count);
 }
 
 void moonbit_fm_session_prewarm(

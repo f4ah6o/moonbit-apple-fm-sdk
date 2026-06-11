@@ -7,23 +7,44 @@ pub struct LanguageModelSession {
 ///|
 pub fn LanguageModelSession::new(
   instructions~ : String? = None,
-  model~ : @core.SystemLanguageModel? = None
+  model~ : @core.SystemLanguageModel? = None,
+  tools~ : Array[@tool.BridgedTool] = []
 ) -> LanguageModelSession {
-  let ptr = match (model, instructions) {
-    (Some(m), Some(instr)) => {
-      let instr_bytes = @ffi.string_to_utf8_bytes(instr)
-      @ffi.session_create(m.ptr, instr_bytes)
+  let tool_refs = tools.map(fn(t) { t.ptr })
+  let ptr = if tools.length() > 0 {
+    let model_owned = match model {
+      Some(_) => false
+      None => true
     }
-    (Some(m), None) =>
-      @ffi.session_create(m.ptr, Bytes::new(0))
-    (None, Some(instr)) => {
-      let default_model = @core.SystemLanguageModel::get_default()
-      let instr_bytes = @ffi.string_to_utf8_bytes(instr)
-      let p = @ffi.session_create(default_model.ptr, instr_bytes)
-      default_model.release()
-      p
+    let m = match model {
+      Some(m) => m
+      None => @core.SystemLanguageModel::get_default()
     }
-    (None, None) => @ffi.session_create_default()
+    let instr_bytes = match instructions {
+      Some(s) => @ffi.string_to_utf8_bytes(s)
+      None => Bytes::new(0)
+    }
+    let p = @ffi.session_create_with_tools(m.ptr, instr_bytes, tool_refs)
+    if model_owned {
+      m.release()
+    }
+    p
+  } else {
+    match (model, instructions) {
+      (Some(m), Some(instr)) => {
+        let instr_bytes = @ffi.string_to_utf8_bytes(instr)
+        @ffi.session_create(m.ptr, instr_bytes)
+      }
+      (Some(m), None) => @ffi.session_create(m.ptr, Bytes::new(0))
+      (None, Some(instr)) => {
+        let default_model = @core.SystemLanguageModel::get_default()
+        let instr_bytes = @ffi.string_to_utf8_bytes(instr)
+        let p = @ffi.session_create(default_model.ptr, instr_bytes)
+        default_model.release()
+        p
+      }
+      (None, None) => @ffi.session_create_default()
+    }
   }
   let transcript = @transcript.Transcript::new(ptr)
   { ptr, transcript }

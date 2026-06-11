@@ -61,6 +61,20 @@ public func FMComposedPromptAddText(composedPrompt: FMComposedPrompt, text: Unsa
   composedPrompt.add(text: textToAddToPrompt)
 }
 
+/// Returns a heap-allocated string containing the concatenation of all text
+/// components that have been added to the prompt via FMComposedPromptAddText.
+/// Non-text components (images, attachments) are skipped. Returns an empty
+/// string when no text components are present, never NULL.
+///
+/// - Important: The returned string is allocated with malloc and MUST be freed
+///              by calling FMFreeString() when no longer needed.
+@_cdecl("FMComposedPromptGetTextContent")
+public func FMComposedPromptGetTextContent(composedPrompt: FMComposedPrompt) -> UnsafeMutablePointer<CChar>? {
+  let prompt = Unmanaged<ComposedPrompt>.fromOpaque(composedPrompt).takeUnretainedValue()
+  let text = prompt.components.compactMap { $0 as? String }.joined()
+  return text.withCString { UnsafeMutablePointer(strdup($0)) }
+}
+
 @_cdecl("FMComposedPromptAddAttachment")
 public func FMComposedPromptAddAttachment(
   composedPrompt: FMComposedPrompt,
@@ -948,6 +962,20 @@ public func FMLanguageModelSessionGetTranscriptJSONString(
   }
 }
 
+/// Returns the number of entries in the session's transcript without
+/// requiring the caller to parse the full transcript JSON. Returns 0 on error
+/// or when the transcript is empty.
+@_cdecl("FMLanguageModelSessionGetTranscriptEntryCount")
+public func FMLanguageModelSessionGetTranscriptEntryCount(session: FMLanguageModelSessionRef) -> Int32 {
+  let sessionObj = Unmanaged<LanguageModelSession>.fromOpaque(session).takeUnretainedValue()
+  guard let json = try? JSONEncoder().encode(sessionObj.transcript),
+        let dict = try? JSONSerialization.jsonObject(with: json) as? [String: Any],
+        let entries = dict["entries"] as? [Any] else {
+    return 0
+  }
+  return Int32(entries.count)
+}
+
 // MARK: - Task management
 
 @_cdecl("FMTaskCancel")
@@ -1314,10 +1342,149 @@ public func FMGeneratedContentGetPropertyValue(
   }
 }
 
+/// Returns the value of a specific numeric property from the generated content as a Double.
+///
+/// - Parameters:
+///   - content: The generated content.
+///   - propertyName: The name of the numeric property to retrieve.
+///   - outValue: On success, receives the Double value of the property.
+///   - outErrorCode: On failure, receives an error code.
+///
+/// - Returns: true on success (outValue is populated), false on failure.
+@_cdecl("FMGeneratedContentGetPropertyValueAsDouble")
+public func FMGeneratedContentGetPropertyValueAsDouble(
+  content: FMGeneratedContentRef,
+  propertyName: UnsafePointer<CChar>,
+  outValue: UnsafeMutablePointer<Double>?,
+  outErrorCode: UnsafeMutablePointer<Int32>?
+) -> Bool {
+  let wrapper = Unmanaged<GeneratedContentWrapper>.fromOpaque(content).takeUnretainedValue()
+  let name = String(cString: propertyName)
+  do {
+    let value: Double = try wrapper.content.value(forProperty: name)
+    outValue?.pointee = value
+    return true
+  } catch let error as LanguageModelSession.GenerationError {
+    outErrorCode?.pointee = mapGenerationErrorToStatusCode(error)
+    return false
+  } catch {
+    outErrorCode?.pointee = StatusCode.unknownError.rawValue
+    return false
+  }
+}
+
+/// Returns the value of a specific boolean property from the generated content.
+///
+/// - Parameters:
+///   - content: The generated content.
+///   - propertyName: The name of the boolean property to retrieve.
+///   - outValue: On success, receives the Bool value of the property.
+///   - outErrorCode: On failure, receives an error code.
+///
+/// - Returns: true on success (outValue is populated), false on failure.
+@_cdecl("FMGeneratedContentGetPropertyValueAsBool")
+public func FMGeneratedContentGetPropertyValueAsBool(
+  content: FMGeneratedContentRef,
+  propertyName: UnsafePointer<CChar>,
+  outValue: UnsafeMutablePointer<Bool>?,
+  outErrorCode: UnsafeMutablePointer<Int32>?
+) -> Bool {
+  let wrapper = Unmanaged<GeneratedContentWrapper>.fromOpaque(content).takeUnretainedValue()
+  let name = String(cString: propertyName)
+  do {
+    let value: Bool = try wrapper.content.value(forProperty: name)
+    outValue?.pointee = value
+    return true
+  } catch let error as LanguageModelSession.GenerationError {
+    outErrorCode?.pointee = mapGenerationErrorToStatusCode(error)
+    return false
+  } catch {
+    outErrorCode?.pointee = StatusCode.unknownError.rawValue
+    return false
+  }
+}
+
+/// Returns the value of a specific integer property from the generated content as an Int64.
+///
+/// - Parameters:
+///   - content: The generated content.
+///   - propertyName: The name of the integer property to retrieve.
+///   - outValue: On success, receives the Int64 value of the property.
+///   - outErrorCode: On failure, receives an error code.
+///
+/// - Returns: true on success (outValue is populated), false on failure.
+@_cdecl("FMGeneratedContentGetPropertyValueAsInt")
+public func FMGeneratedContentGetPropertyValueAsInt(
+  content: FMGeneratedContentRef,
+  propertyName: UnsafePointer<CChar>,
+  outValue: UnsafeMutablePointer<Int64>?,
+  outErrorCode: UnsafeMutablePointer<Int32>?
+) -> Bool {
+  let wrapper = Unmanaged<GeneratedContentWrapper>.fromOpaque(content).takeUnretainedValue()
+  let name = String(cString: propertyName)
+  do {
+    let value: Int = try wrapper.content.value(forProperty: name)
+    outValue?.pointee = Int64(value)
+    return true
+  } catch let error as LanguageModelSession.GenerationError {
+    outErrorCode?.pointee = mapGenerationErrorToStatusCode(error)
+    return false
+  } catch {
+    outErrorCode?.pointee = StatusCode.unknownError.rawValue
+    return false
+  }
+}
+
 @_cdecl("FMGeneratedContentIsComplete")
 public func FMGeneratedContentIsComplete(content: FMGeneratedContentRef) -> Bool {
   let wrapper = Unmanaged<GeneratedContentWrapper>.fromOpaque(content).takeUnretainedValue()
   return wrapper.content.isComplete
+}
+
+/// Returns a heap-allocated JSON array string of the top-level property names present
+/// in the generated content, or NULL if the content cannot be serialized.
+///
+/// - Parameters:
+///   - content: The generated content.
+///
+/// - Returns: A JSON array string such as `["name","score"]`, or NULL on error.
+///
+/// - Important: The returned string is allocated with malloc and MUST be freed by calling
+///              FMFreeString() when no longer needed to prevent memory leaks.
+@_cdecl("FMGeneratedContentGetPropertyNames")
+public func FMGeneratedContentGetPropertyNames(
+  content: FMGeneratedContentRef
+) -> UnsafeMutablePointer<CChar>? {
+  let wrapper = Unmanaged<GeneratedContentWrapper>.fromOpaque(content).takeUnretainedValue()
+  let json = wrapper.content.jsonString
+  guard let data = json.data(using: .utf8),
+        let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+        let keysData = try? JSONSerialization.data(withJSONObject: Array(dict.keys).sorted()),
+        let keysString = String(data: keysData, encoding: .utf8) else {
+    return nil
+  }
+  return keysString.withCString { UnsafeMutablePointer(strdup($0)) }
+}
+
+/// Returns whether the generated content has a top-level property with the given name.
+///
+/// Unlike FMGeneratedContentGetPropertyValue, this function never allocates an error
+/// string and returns false for any missing or unresolvable property rather than
+/// surfacing an error code. It is a cheap existence check: use it to guard calls to
+/// FMGeneratedContentGetPropertyValue when the schema is not fully known in advance.
+@_cdecl("FMGeneratedContentHasProperty")
+public func FMGeneratedContentHasProperty(
+  content: FMGeneratedContentRef,
+  propertyName: UnsafePointer<CChar>
+) -> Bool {
+  let wrapper = Unmanaged<GeneratedContentWrapper>.fromOpaque(content).takeUnretainedValue()
+  let name = String(cString: propertyName)
+  let json = wrapper.content.jsonString
+  guard let data = json.data(using: .utf8),
+        let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+    return false
+  }
+  return dict[name] != nil
 }
 
 // MARK: - Wrapper classes for C bindings
