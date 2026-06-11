@@ -6,12 +6,16 @@ MoonBit bindings for Apple's [Foundation Models](https://developer.apple.com/doc
 
 - macOS 26+ on Apple Silicon with Apple Intelligence enabled
 - [MoonBit toolchain](https://www.moonbitlang.com/download/) (native target)
-- The `foundation-models-c` C bindings library (from [python-apple-fm-sdk](../python-apple-fm-sdk)), built at
-  `../python-apple-fm-sdk/foundation-models-c/.build/release`
+- The vendored `foundation-models-c` C bindings library, built at
+  `vendor/foundation-models-c/.build/release`
 
-> The link path to `libFoundationModels.dylib` is currently hardcoded in each
-> `moon.pkg.json` (`link.native.cc-link-flags`). Adjust it if your checkout
-> lives elsewhere.
+Build the native bindings once before running MoonBit examples:
+
+```sh
+cd vendor/foundation-models-c
+swift build -c release
+cd ../..
+```
 
 ## Quick start
 
@@ -120,12 +124,12 @@ For async contexts where a sync callback won't do (e.g. an HTTP handler),
 `start_structured_stream` returns the stream ref and you drive the
 `@ffi.read_response` loop yourself.
 
-> This requires two C binding functions
+> This repo vendors `foundation-models-c` and includes the structured
+> streaming bridge functions
 > (`FMLanguageModelSessionStreamResponseWithSchema`,
-> `FMLanguageModelSessionStructuredResponseStreamIterate`) that are not yet in
-> upstream `python-apple-fm-sdk` — they are added as a local patch to
-> `foundation-models-c` in this checkout. Rebuild with
-> `swift build -c release` in `../python-apple-fm-sdk/foundation-models-c`.
+> `FMLanguageModelSessionStructuredResponseStreamIterate`) directly in that
+> local copy. Rebuild with `swift build -c release` in
+> `vendor/foundation-models-c` after updating the bindings.
 
 ### Generative UI demo
 
@@ -180,6 +184,10 @@ partial snapshots (every field optional, arrays default empty).
 moon check                 # type-check everything
 moon test --target native  # run tests (requires the C library; model not needed)
 ```
+
+The native library is statically linked from
+`vendor/foundation-models-c/.build/release`, so no sibling checkout of
+`python-apple-fm-sdk` is required.
 
 To re-record `docs/demo.gif`: start the demo server, then
 `cd scripts && npm install && node record-demo.mjs` (frames land in
