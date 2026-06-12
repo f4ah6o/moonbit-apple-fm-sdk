@@ -976,6 +976,120 @@ public func FMLanguageModelSessionGetTranscriptEntryCount(session: FMLanguageMod
   return Int32(entries.count)
 }
 
+// MARK: - Feedback
+
+private struct FeedbackIssuePayload: Decodable {
+  var category: String
+  var explanation: String?
+}
+
+private func feedbackSentiment(from c: FMFeedbackSentiment) throws -> LanguageModelFeedback.Sentiment? {
+  switch c {
+  case FMFeedbackSentimentNone:
+    return nil
+  case FMFeedbackSentimentPositive:
+    return .positive
+  case FMFeedbackSentimentNegative:
+    return .negative
+  case FMFeedbackSentimentNeutral:
+    return .neutral
+  default:
+    throw NSError(
+      domain: "FoundationModelsCBindings.Feedback",
+      code: Int(StatusCode.decodingFailure.rawValue),
+      userInfo: [NSLocalizedDescriptionKey: "Unknown feedback sentiment \(c)"]
+    )
+  }
+}
+
+private func feedbackIssueCategory(from raw: String) throws -> LanguageModelFeedback.Issue.Category {
+  switch raw {
+  case "unhelpful":
+    return .unhelpful
+  case "tooVerbose":
+    return .tooVerbose
+  case "didNotFollowInstructions":
+    return .didNotFollowInstructions
+  case "incorrect":
+    return .incorrect
+  case "stereotypeOrBias":
+    return .stereotypeOrBias
+  case "suggestiveOrSexual":
+    return .suggestiveOrSexual
+  case "vulgarOrOffensive":
+    return .vulgarOrOffensive
+  case "triggeredGuardrailUnexpectedly":
+    return .triggeredGuardrailUnexpectedly
+  default:
+    throw NSError(
+      domain: "FoundationModelsCBindings.Feedback",
+      code: Int(StatusCode.decodingFailure.rawValue),
+      userInfo: [NSLocalizedDescriptionKey: "Unknown feedback issue category \(raw)"]
+    )
+  }
+}
+
+private func parseFeedbackIssues(from jsonString: String?) throws -> [LanguageModelFeedback.Issue] {
+  guard let jsonString, !jsonString.isEmpty else {
+    return []
+  }
+  let payloads = try JSONDecoder().decode([FeedbackIssuePayload].self, from: Data(jsonString.utf8))
+  return try payloads.map {
+    LanguageModelFeedback.Issue(
+      category: try feedbackIssueCategory(from: $0.category),
+      explanation: $0.explanation
+    )
+  }
+}
+
+@_cdecl("FMLanguageModelSessionLogFeedbackAttachment")
+public func FMLanguageModelSessionLogFeedbackAttachment(
+  session: FMLanguageModelSessionRef,
+  sentiment: FMFeedbackSentiment,
+  issuesJSON: UnsafePointer<CChar>?,
+  desiredResponseText: UnsafePointer<CChar>?,
+  outLength: UnsafeMutablePointer<Int>?,
+  outErrorCode: UnsafeMutablePointer<Int32>?,
+  outErrorDescription: UnsafeMutablePointer<UnsafePointer<CChar>?>?
+) -> UnsafeMutablePointer<CChar>? {
+  let sessionObj = Unmanaged<LanguageModelSession>.fromOpaque(session).takeUnretainedValue()
+
+  do {
+    let issues = try parseFeedbackIssues(from: issuesJSON.map(String.init(cString:)))
+    let desiredText = desiredResponseText.map(String.init(cString:))
+    let data = sessionObj.logFeedbackAttachment(
+      sentiment: try feedbackSentiment(from: sentiment),
+      issues: issues,
+      desiredResponseText: desiredText
+    )
+
+    outLength?.pointee = data.count
+    guard data.count > 0 else {
+      return UnsafeMutablePointer(strdup(""))
+    }
+    guard let rawPtr = malloc(data.count) else {
+      throw NSError(
+        domain: "FoundationModelsCBindings.Feedback",
+        code: Int(StatusCode.unknownError.rawValue),
+        userInfo: [NSLocalizedDescriptionKey: "Failed to allocate feedback attachment buffer"]
+      )
+    }
+    let ptr = rawPtr.assumingMemoryBound(to: CChar.self)
+    data.withUnsafeBytes { bytes in
+      _ = memcpy(ptr, bytes.baseAddress!, data.count)
+    }
+    return ptr
+  } catch {
+    let debugDescription = formatErrorDescription(error)
+    debugDescription.withCString { cString in
+      outErrorCode?.pointee = StatusCode.decodingFailure.rawValue
+      outErrorDescription?.pointee = UnsafePointer(strdup(cString))
+    }
+    outLength?.pointee = 0
+    return nil
+  }
+}
+
 // MARK: - Task management
 
 @_cdecl("FMTaskCancel")

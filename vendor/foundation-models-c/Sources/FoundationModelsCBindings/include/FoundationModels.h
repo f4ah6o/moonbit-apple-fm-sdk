@@ -46,6 +46,14 @@ typedef enum
 
 typedef enum
 {
+  FMFeedbackSentimentNone = 0,
+  FMFeedbackSentimentPositive = 1,
+  FMFeedbackSentimentNegative = 2,
+  FMFeedbackSentimentNeutral = 3
+} FMFeedbackSentiment;
+
+typedef enum
+{
   FMComposedPromptAddImageErrorNone,
   FMComposedPromptAddImageErrorUnsupported,
   FMComposedPromptAddImageErrorUnknown
@@ -84,6 +92,9 @@ void FMLanguageModelSessionStructuredResponseStreamIterate(FMLanguageModelSessio
 FMLanguageModelSessionRef _Nullable FMTranscriptCreateFromJSONString(const char * _Nonnull jsonString, int * _Nullable outErrorCode, char * * _Nullable outErrorDescription);
 char * _Nullable FMLanguageModelSessionGetTranscriptJSONString(FMLanguageModelSessionRef _Nonnull session, int * _Nullable outErrorCode, char * * _Nullable outErrorDescription);
 int FMLanguageModelSessionGetTranscriptEntryCount(FMLanguageModelSessionRef _Nonnull session);
+// MARK: - Feedback functions
+
+char * _Nullable FMLanguageModelSessionLogFeedbackAttachment(FMLanguageModelSessionRef _Nonnull session, FMFeedbackSentiment sentiment, const char * _Nullable issuesJSON, const char * _Nullable desiredResponseText, size_t * _Nullable outLength, int * _Nullable outErrorCode, char * * _Nullable outErrorDescription);
 // MARK: - GenerationSchema functions
 
 FMGenerationSchemaRef _Nonnull FMGenerationSchemaCreate(const char * _Nonnull name, const char * _Nullable description);

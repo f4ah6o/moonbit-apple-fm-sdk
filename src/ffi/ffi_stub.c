@@ -11,6 +11,12 @@ typedef const void *FMGeneratedContentRef;
 typedef const void *FMGenerationSchemaPropertyRef;
 typedef const void *FMBridgedToolRef;
 typedef const void *FMComposedPromptRef;
+typedef enum {
+    FMFeedbackSentimentNone = 0,
+    FMFeedbackSentimentPositive = 1,
+    FMFeedbackSentimentNegative = 2,
+    FMFeedbackSentimentNeutral = 3
+} FMFeedbackSentiment;
 
 typedef void (*FMLanguageModelSessionResponseCallback)(
     int status, const char *content, size_t length, void *userInfo);
@@ -60,6 +66,15 @@ extern FMBridgedToolRef FMBridgedToolCreate(
     FMGenerationSchemaRef parameters, FMToolCallable callable,
     int *outErrorCode, char **outErrorDescription);
 extern void FMRelease(const void *object);
+extern void FMFreeString(char *str);
+extern char *FMLanguageModelSessionLogFeedbackAttachment(
+    FMLanguageModelSessionRef session,
+    FMFeedbackSentiment sentiment,
+    const char *issuesJSON,
+    const char *desiredResponseText,
+    size_t *outLength,
+    int *outErrorCode,
+    char **outErrorDescription);
 
 /* ===== anyOf helper ===== */
 
@@ -210,6 +225,39 @@ void moonbit_fm_session_prewarm(
     FMLanguageModelSessionPrewarm(
         session,
         (prompt_prefix != NULL && prompt_prefix[0] != '\0') ? prompt_prefix : NULL);
+}
+
+int moonbit_fm_session_log_feedback_attachment(
+    FMLanguageModelSessionRef session,
+    int sentiment,
+    const char *issues_json,
+    const char *desired_response_text,
+    char *out_content,
+    size_t max_len,
+    size_t *out_actual_len
+) {
+    size_t len = 0;
+    int code = 0;
+    char *desc = NULL;
+    char *payload = FMLanguageModelSessionLogFeedbackAttachment(
+        session,
+        (FMFeedbackSentiment)sentiment,
+        (issues_json != NULL && issues_json[0] != '\0') ? issues_json : NULL,
+        (desired_response_text != NULL && desired_response_text[0] != '\0') ? desired_response_text : NULL,
+        &len,
+        &code,
+        &desc);
+    if (payload == NULL) {
+        *out_actual_len = 0;
+        if (desc != NULL) FMFreeString(desc);
+        return code == 0 ? 255 : code;
+    }
+    *out_actual_len = len;
+    if (len <= max_len) {
+        memcpy(out_content, payload, len);
+    }
+    FMFreeString(payload);
+    return len <= max_len ? 0 : 255;
 }
 
 FMTaskRef moonbit_fm_session_respond(
