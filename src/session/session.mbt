@@ -63,6 +63,39 @@ pub fn LanguageModelSession::reset(self : LanguageModelSession) -> Unit {
 }
 
 ///|
+/// Restore a session from a previously serialised transcript JSON string.
+/// Resumes the conversation at the point the transcript was captured,
+/// optionally using a different model or attaching tools.
+pub fn LanguageModelSession::from_transcript(
+  transcript_json : String,
+  model~ : @core.SystemLanguageModel? = None,
+  tools~ : Array[@tool.BridgedTool] = []
+) -> LanguageModelSession raise {
+  let json_bytes = @ffi.string_to_utf8_bytes(transcript_json)
+  let (transcript_ptr, err_code) = @ffi.transcript_create_from_json(json_bytes)
+  if err_code != 0 {
+    @errors.raise_generation_error(err_code, "Failed to create transcript from JSON")
+  }
+  let tool_refs = tools.map(fn(t) { t.ptr })
+  let model_owned = match model {
+    Some(_) => false
+    None => true
+  }
+  let m = match model {
+    Some(m) => m
+    None => @core.SystemLanguageModel::get_default()
+  }
+  let session_ptr = @ffi.session_create_from_transcript(
+    transcript_ptr, m.ptr, tool_refs,
+  )
+  if model_owned {
+    m.release()
+  }
+  let transcript = @transcript.Transcript::new(session_ptr)
+  { ptr: session_ptr, transcript }
+}
+
+///|
 /// Ask the system to pre-load resources for this session so the first request
 /// has lower latency. `prompt_prefix`, when non-empty, is the prefix the next
 /// prompt is expected to start with. Prewarm is a fire-and-forget hint and is
