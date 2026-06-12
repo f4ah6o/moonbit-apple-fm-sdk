@@ -25,6 +25,11 @@ test "reset is safe" {
   assert_false!(session.is_responding())
 }
 
+test "new session transcript entry count is zero" {
+  let session = @session.LanguageModelSession::new()
+  assert_eq!(session.transcript.entry_count(), 0)
+}
+
 test "from_transcript round trip" {
   let orig = @session.LanguageModelSession::new()
   let json = orig.transcript.to_json_string()

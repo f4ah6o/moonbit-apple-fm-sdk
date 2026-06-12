@@ -27,6 +27,12 @@ pub fn Transcript::to_json_string(
 }
 
 ///|
+/// Number of transcript entries without parsing the full transcript JSON.
+pub fn Transcript::entry_count(self : Transcript) -> Int {
+  @ffi.session_get_transcript_entry_count(self.session_ptr)
+}
+
+///|
 pub fn Transcript::from_json_string(
   json_str : String
 ) -> Transcript raise {

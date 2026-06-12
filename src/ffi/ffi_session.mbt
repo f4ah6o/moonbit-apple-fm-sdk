@@ -41,6 +41,19 @@ extern "c" fn fm_transcript_create_from_json_string(
 ) -> FMLanguageModelSessionRef = "FMTranscriptCreateFromJSONString"
 
 ///|
+extern "c" fn moonbit_fm_session_create_from_transcript_fn(
+  transcript_session : FMLanguageModelSessionRef,
+  model : FMSystemLanguageModelRef,
+  tool_count : Int
+) -> FMLanguageModelSessionRef = "moonbit_fm_session_create_from_transcript"
+
+///|
+#borrow(session)
+extern "c" fn fm_language_model_session_get_transcript_entry_count(
+  session : FMLanguageModelSessionRef
+) -> Int = "FMLanguageModelSessionGetTranscriptEntryCount"
+
+///|
 #borrow(session, out_error_code, out_error_description)
 extern "c" fn fm_language_model_session_get_transcript_json_string(
   session : FMLanguageModelSessionRef,
@@ -266,6 +279,27 @@ pub fn transcript_create_from_json(
   )
   let code = error_code[0].to_int()
   (ptr, code)
+}
+
+///|
+pub fn session_create_from_transcript(
+  transcript_session : FMLanguageModelSessionRef,
+  model : FMSystemLanguageModelRef,
+  tools : Array[FMBridgedToolRef]
+) -> FMLanguageModelSessionRef {
+  for tool in tools {
+    moonbit_fm_stage_tool_fn(tool)
+  }
+  moonbit_fm_session_create_from_transcript_fn(
+    transcript_session, model, tools.length(),
+  )
+}
+
+///|
+pub fn session_get_transcript_entry_count(
+  session : FMLanguageModelSessionRef
+) -> Int {
+  fm_language_model_session_get_transcript_entry_count(session)
 }
 
 ///|
