@@ -101,3 +101,28 @@ pub fn cancel_task(ptr : FMTaskRef) -> Unit {
 pub fn free_string(str : CString) -> Unit {
   fm_free_string(str)
 }
+
+///|
+#borrow(s)
+extern "c" fn moonbit_fm_cstring_len_fn(s : CString) -> Int = "moonbit_fm_cstring_len"
+
+///|
+#borrow(s, buf)
+extern "c" fn moonbit_fm_cstring_copy_fn(
+  s : CString,
+  buf : Bytes,
+  max_len : Int
+) = "moonbit_fm_cstring_copy"
+
+///| Convert an opaque C string (char*) to a MoonBit String, then free it.
+pub fn cstring_to_string(s : CString) -> String {
+  let len = moonbit_fm_cstring_len_fn(s)
+  if len == 0 {
+    fm_free_string(s)
+    return ""
+  }
+  let buf = Bytes::new(len)
+  moonbit_fm_cstring_copy_fn(s, buf, len)
+  fm_free_string(s)
+  @utf8.decode_lossy(buf[0:len])
+}

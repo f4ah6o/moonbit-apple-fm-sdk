@@ -188,6 +188,19 @@ FMLanguageModelSessionRef moonbit_fm_session_create(
         model, instructions, tools, count);
 }
 
+FMLanguageModelSessionRef moonbit_fm_session_create_from_transcript(
+    FMLanguageModelSessionRef transcript_session,
+    FMSystemLanguageModelRef model,
+    int tool_count
+) {
+    FMBridgedToolRef *tools;
+    int count;
+    consume_staged_tools(&tools, &count);
+    (void)tool_count;
+    return FMLanguageModelSessionCreateFromTranscript(
+        transcript_session, model, tools, count);
+}
+
 void moonbit_fm_session_prewarm(
     FMLanguageModelSessionRef session,
     const char *prompt_prefix
@@ -338,4 +351,17 @@ int moonbit_fm_tool_read_call(
 void moonbit_fm_tool_cleanup(void) {
     if (tool_pipe[0] >= 0) { close(tool_pipe[0]); close(tool_pipe[1]); }
     tool_pipe[0] = tool_pipe[1] = -1;
+}
+
+/* ===== CString helpers ===== */
+
+size_t moonbit_fm_cstring_len(const char *s) {
+    return s ? strlen(s) : 0;
+}
+
+void moonbit_fm_cstring_copy(const char *s, char *buf, size_t max_len) {
+    if (!s || max_len == 0) return;
+    size_t len = strlen(s);
+    size_t to_copy = len < max_len ? len : max_len;
+    memcpy(buf, s, to_copy);
 }

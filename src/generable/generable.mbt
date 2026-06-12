@@ -22,8 +22,17 @@ pub fn GeneratedContent::from_ptr(
   ptr : @ffi.FMGeneratedContentRef
 ) -> GeneratedContent {
   let json_cstr = @ffi.generated_content_get_json_string(ptr)
-  ignore(json_cstr)
-  { ptr, json_data: Json::null() }
+  let json_str = @ffi.cstring_to_string(json_cstr)
+  let json_data = if json_str.is_empty() {
+    Json::null()
+  } else {
+    try {
+      @json.parse(json_str)
+    } catch {
+      _ => Json::null()
+    }
+  }
+  { ptr, json_data }
 }
 
 ///|

@@ -24,3 +24,11 @@ test "reset is safe" {
   session.reset()
   assert_false!(session.is_responding())
 }
+
+test "from_transcript round trip" {
+  let orig = @session.LanguageModelSession::new()
+  let json = orig.transcript.to_json_string()
+  assert_false!(json.is_empty())
+  let restored = @session.LanguageModelSession::from_transcript(json)
+  assert_false!(restored.is_responding())
+}

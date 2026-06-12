@@ -18,12 +18,12 @@ pub fn Transcript::to_json_string(
     self.session_ptr,
   )
   if error_code != 0 {
+    @ffi.free_string(json_cstr)
     @errors.raise_generation_error(
       error_code, "Failed to fetch session transcript",
     )
   }
-  ignore(json_cstr)
-  ""
+  @ffi.cstring_to_string(json_cstr)
 }
 
 ///|
