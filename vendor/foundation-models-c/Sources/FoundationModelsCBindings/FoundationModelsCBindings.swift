@@ -1042,6 +1042,42 @@ private func parseFeedbackIssues(from jsonString: String?) throws -> [LanguageMo
   }
 }
 
+private func copyFeedbackAttachmentData(
+  _ data: Data,
+  outLength: UnsafeMutablePointer<Int>?
+) throws -> UnsafeMutablePointer<CChar>? {
+  outLength?.pointee = data.count
+  guard data.count > 0 else {
+    return UnsafeMutablePointer(strdup(""))
+  }
+  guard let rawPtr = malloc(data.count) else {
+    throw NSError(
+      domain: "FoundationModelsCBindings.Feedback",
+      code: Int(StatusCode.unknownError.rawValue),
+      userInfo: [NSLocalizedDescriptionKey: "Failed to allocate feedback attachment buffer"]
+    )
+  }
+  let ptr = rawPtr.assumingMemoryBound(to: CChar.self)
+  data.withUnsafeBytes { bytes in
+    _ = memcpy(ptr, bytes.baseAddress!, data.count)
+  }
+  return ptr
+}
+
+private func setFeedbackAttachmentError(
+  _ error: Error,
+  outLength: UnsafeMutablePointer<Int>?,
+  outErrorCode: UnsafeMutablePointer<Int32>?,
+  outErrorDescription: UnsafeMutablePointer<UnsafePointer<CChar>?>?
+) {
+  let debugDescription = formatErrorDescription(error)
+  debugDescription.withCString { cString in
+    outErrorCode?.pointee = StatusCode.decodingFailure.rawValue
+    outErrorDescription?.pointee = UnsafePointer(strdup(cString))
+  }
+  outLength?.pointee = 0
+}
+
 @_cdecl("FMLanguageModelSessionLogFeedbackAttachment")
 public func FMLanguageModelSessionLogFeedbackAttachment(
   session: FMLanguageModelSessionRef,
@@ -1062,30 +1098,51 @@ public func FMLanguageModelSessionLogFeedbackAttachment(
       issues: issues,
       desiredResponseText: desiredText
     )
-
-    outLength?.pointee = data.count
-    guard data.count > 0 else {
-      return UnsafeMutablePointer(strdup(""))
-    }
-    guard let rawPtr = malloc(data.count) else {
-      throw NSError(
-        domain: "FoundationModelsCBindings.Feedback",
-        code: Int(StatusCode.unknownError.rawValue),
-        userInfo: [NSLocalizedDescriptionKey: "Failed to allocate feedback attachment buffer"]
-      )
-    }
-    let ptr = rawPtr.assumingMemoryBound(to: CChar.self)
-    data.withUnsafeBytes { bytes in
-      _ = memcpy(ptr, bytes.baseAddress!, data.count)
-    }
-    return ptr
+    return try copyFeedbackAttachmentData(data, outLength: outLength)
   } catch {
-    let debugDescription = formatErrorDescription(error)
-    debugDescription.withCString { cString in
-      outErrorCode?.pointee = StatusCode.decodingFailure.rawValue
-      outErrorDescription?.pointee = UnsafePointer(strdup(cString))
-    }
-    outLength?.pointee = 0
+    setFeedbackAttachmentError(
+      error,
+      outLength: outLength,
+      outErrorCode: outErrorCode,
+      outErrorDescription: outErrorDescription
+    )
+    return nil
+  }
+}
+
+@_cdecl("FMLanguageModelSessionLogFeedbackAttachmentWithDesiredResponseContent")
+public func FMLanguageModelSessionLogFeedbackAttachmentWithDesiredResponseContent(
+  session: FMLanguageModelSessionRef,
+  sentiment: FMFeedbackSentiment,
+  issuesJSON: UnsafePointer<CChar>?,
+  desiredResponseContentJSON: UnsafePointer<CChar>?,
+  outLength: UnsafeMutablePointer<Int>?,
+  outErrorCode: UnsafeMutablePointer<Int32>?,
+  outErrorDescription: UnsafeMutablePointer<UnsafePointer<CChar>?>?
+) -> UnsafeMutablePointer<CChar>? {
+  let sessionObj = Unmanaged<LanguageModelSession>.fromOpaque(session).takeUnretainedValue()
+
+  do {
+    let issues = try parseFeedbackIssues(from: issuesJSON.map(String.init(cString:)))
+    let desiredContent: GeneratedContent? =
+      if let desiredResponseContentJSON, desiredResponseContentJSON.pointee != 0 {
+        try GeneratedContent(json: String(cString: desiredResponseContentJSON))
+      } else {
+        nil
+      }
+    let data = sessionObj.logFeedbackAttachment(
+      sentiment: try feedbackSentiment(from: sentiment),
+      issues: issues,
+      desiredResponseContent: desiredContent
+    )
+    return try copyFeedbackAttachmentData(data, outLength: outLength)
+  } catch {
+    setFeedbackAttachmentError(
+      error,
+      outLength: outLength,
+      outErrorCode: outErrorCode,
+      outErrorDescription: outErrorDescription
+    )
     return nil
   }
 }

@@ -75,6 +75,14 @@ extern char *FMLanguageModelSessionLogFeedbackAttachment(
     size_t *outLength,
     int *outErrorCode,
     char **outErrorDescription);
+extern char *FMLanguageModelSessionLogFeedbackAttachmentWithDesiredResponseContent(
+    FMLanguageModelSessionRef session,
+    FMFeedbackSentiment sentiment,
+    const char *issuesJSON,
+    const char *desiredResponseContentJSON,
+    size_t *outLength,
+    int *outErrorCode,
+    char **outErrorDescription);
 
 /* ===== anyOf helper ===== */
 
@@ -227,6 +235,28 @@ void moonbit_fm_session_prewarm(
         (prompt_prefix != NULL && prompt_prefix[0] != '\0') ? prompt_prefix : NULL);
 }
 
+static int copy_feedback_attachment_payload(
+    char *payload,
+    size_t len,
+    int code,
+    char *desc,
+    char *out_content,
+    size_t max_len,
+    size_t *out_actual_len
+) {
+    if (payload == NULL) {
+        *out_actual_len = 0;
+        if (desc != NULL) FMFreeString(desc);
+        return code == 0 ? 255 : code;
+    }
+    *out_actual_len = len;
+    if (len <= max_len) {
+        memcpy(out_content, payload, len);
+    }
+    FMFreeString(payload);
+    return len <= max_len ? 0 : 255;
+}
+
 int moonbit_fm_session_log_feedback_attachment(
     FMLanguageModelSessionRef session,
     int sentiment,
@@ -247,17 +277,32 @@ int moonbit_fm_session_log_feedback_attachment(
         &len,
         &code,
         &desc);
-    if (payload == NULL) {
-        *out_actual_len = 0;
-        if (desc != NULL) FMFreeString(desc);
-        return code == 0 ? 255 : code;
-    }
-    *out_actual_len = len;
-    if (len <= max_len) {
-        memcpy(out_content, payload, len);
-    }
-    FMFreeString(payload);
-    return len <= max_len ? 0 : 255;
+    return copy_feedback_attachment_payload(
+        payload, len, code, desc, out_content, max_len, out_actual_len);
+}
+
+int moonbit_fm_session_log_feedback_attachment_with_desired_response_content(
+    FMLanguageModelSessionRef session,
+    int sentiment,
+    const char *issues_json,
+    const char *desired_response_content_json,
+    char *out_content,
+    size_t max_len,
+    size_t *out_actual_len
+) {
+    size_t len = 0;
+    int code = 0;
+    char *desc = NULL;
+    char *payload = FMLanguageModelSessionLogFeedbackAttachmentWithDesiredResponseContent(
+        session,
+        (FMFeedbackSentiment)sentiment,
+        (issues_json != NULL && issues_json[0] != '\0') ? issues_json : NULL,
+        (desired_response_content_json != NULL && desired_response_content_json[0] != '\0') ? desired_response_content_json : NULL,
+        &len,
+        &code,
+        &desc);
+    return copy_feedback_attachment_payload(
+        payload, len, code, desc, out_content, max_len, out_actual_len);
 }
 
 FMTaskRef moonbit_fm_session_respond(

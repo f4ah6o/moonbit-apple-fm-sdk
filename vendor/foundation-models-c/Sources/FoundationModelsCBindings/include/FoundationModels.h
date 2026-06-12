@@ -95,6 +95,7 @@ int FMLanguageModelSessionGetTranscriptEntryCount(FMLanguageModelSessionRef _Non
 // MARK: - Feedback functions
 
 char * _Nullable FMLanguageModelSessionLogFeedbackAttachment(FMLanguageModelSessionRef _Nonnull session, FMFeedbackSentiment sentiment, const char * _Nullable issuesJSON, const char * _Nullable desiredResponseText, size_t * _Nullable outLength, int * _Nullable outErrorCode, char * * _Nullable outErrorDescription);
+char * _Nullable FMLanguageModelSessionLogFeedbackAttachmentWithDesiredResponseContent(FMLanguageModelSessionRef _Nonnull session, FMFeedbackSentiment sentiment, const char * _Nullable issuesJSON, const char * _Nullable desiredResponseContentJSON, size_t * _Nullable outLength, int * _Nullable outErrorCode, char * * _Nullable outErrorDescription);
 // MARK: - GenerationSchema functions
 
 FMGenerationSchemaRef _Nonnull FMGenerationSchemaCreate(const char * _Nonnull name, const char * _Nullable description);

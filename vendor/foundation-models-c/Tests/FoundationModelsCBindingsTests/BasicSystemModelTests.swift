@@ -462,4 +462,50 @@ import Synchronization
     #expect(errCode != 0)
     #expect(errDesc != nil)
   }
+
+  @Test func testLogFeedbackAttachmentWithDesiredResponseContent() throws {
+    let session = FMLanguageModelSessionCreateDefault()
+    defer { FMRelease(session) }
+
+    var length = 0
+    var errCode: Int32 = 0
+    var errDesc: UnsafeMutablePointer<CChar>? = nil
+    let attachment = FMLanguageModelSessionLogFeedbackAttachmentWithDesiredResponseContent(
+      session,
+      FMFeedbackSentimentPositive,
+      nil,
+      "{\"answer\":\"A concise desired response.\"}",
+      &length,
+      &errCode,
+      &errDesc
+    )
+    let attachmentPtr = try #require(attachment)
+    defer { FMFreeString(attachmentPtr) }
+    #expect(errCode == 0)
+    #expect(errDesc == nil)
+    #expect(length > 0)
+  }
+
+  @Test func testLogFeedbackAttachmentWithDesiredResponseContentRejectsInvalidJSON() throws {
+    let session = FMLanguageModelSessionCreateDefault()
+    defer { FMRelease(session) }
+
+    var length = 0
+    var errCode: Int32 = 0
+    var errDesc: UnsafeMutablePointer<CChar>? = nil
+    let attachment = FMLanguageModelSessionLogFeedbackAttachmentWithDesiredResponseContent(
+      session,
+      FMFeedbackSentimentNeutral,
+      nil,
+      "{not json",
+      &length,
+      &errCode,
+      &errDesc
+    )
+    defer { FMFreeString(errDesc) }
+    #expect(attachment == nil)
+    #expect(length == 0)
+    #expect(errCode != 0)
+    #expect(errDesc != nil)
+  }
 }
