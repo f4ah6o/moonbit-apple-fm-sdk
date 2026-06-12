@@ -30,6 +30,15 @@ test "new session transcript entry count is zero" {
   assert_eq!(session.transcript.entry_count(), 0)
 }
 
+test "transcript to_json returns object" {
+  let session = @session.LanguageModelSession::new()
+  let json = session.transcript.to_json()
+  match json {
+    Object(_) => ()
+    _ => fail("expected JSON object from transcript")
+  }
+}
+
 test "from_transcript round trip" {
   let orig = @session.LanguageModelSession::new()
   let json = orig.transcript.to_json_string()

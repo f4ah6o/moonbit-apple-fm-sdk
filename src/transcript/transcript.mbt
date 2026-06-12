@@ -27,6 +27,13 @@ pub fn Transcript::to_json_string(
 }
 
 ///|
+/// Parse the transcript into a Json value. Equivalent to Go's AsMap().
+pub fn Transcript::to_json(self : Transcript) -> Json raise {
+  let json_str = self.to_json_string()
+  @json.parse(json_str)
+}
+
+///|
 /// Number of transcript entries without parsing the full transcript JSON.
 pub fn Transcript::entry_count(self : Transcript) -> Int {
   @ffi.session_get_transcript_entry_count(self.session_ptr)
