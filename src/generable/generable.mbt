@@ -65,6 +65,70 @@ pub fn[T : @json.FromJson] GeneratedContent::decode(
 }
 
 ///|
+pub fn GeneratedContent::value_as_float64(
+  self : GeneratedContent,
+  name : String
+) -> Double? {
+  match self.json_data {
+    Object(obj) => match obj.get(name) {
+      Some(Number(v, ..)) => Some(v)
+      _ => None
+    }
+    _ => None
+  }
+}
+
+///|
+pub fn GeneratedContent::value_as_int64(
+  self : GeneratedContent,
+  name : String
+) -> Int64? {
+  match self.json_data {
+    Object(obj) => match obj.get(name) {
+      Some(Number(v, ..)) => Some(v.to_int64())
+      _ => None
+    }
+    _ => None
+  }
+}
+
+///|
+pub fn GeneratedContent::value_as_bool(
+  self : GeneratedContent,
+  name : String
+) -> Bool? {
+  match self.json_data {
+    Object(obj) => match obj.get(name) {
+      Some(True) => Some(true)
+      Some(False) => Some(false)
+      _ => None
+    }
+    _ => None
+  }
+}
+
+///|
+pub fn GeneratedContent::has_property(
+  self : GeneratedContent,
+  name : String
+) -> Bool {
+  match self.json_data {
+    Object(obj) => obj.contains(name)
+    _ => false
+  }
+}
+
+///|
+pub fn GeneratedContent::property_names(
+  self : GeneratedContent
+) -> Array[String] {
+  match self.json_data {
+    Object(obj) => obj.keys().to_array()
+    _ => []
+  }
+}
+
+///|
 pub(open) trait Generable {
   generation_schema() -> @schema.GenerationSchema
   from_generated_content(GeneratedContent) -> Self raise
