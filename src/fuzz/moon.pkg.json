@@ -8,7 +8,10 @@
     "ringo-fm/ringo_fm_sdk/property",
     "ringo-fm/ringo_fm_sdk/guide",
     "ringo-fm/ringo_fm_sdk/ffi",
-    "ringo-fm/ringo_fm_sdk/errors"
+    "ringo-fm/ringo_fm_sdk/errors",
+    "ringo-fm/ringo_fm_sdk/options",
+    "ringo-fm/ringo_fm_sdk/schema_discovery",
+    "ringo-fm/ringo_fm_sdk/type_conversion"
   ],
   "link": {
     "native": {

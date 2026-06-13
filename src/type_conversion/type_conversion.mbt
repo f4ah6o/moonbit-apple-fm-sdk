@@ -6,7 +6,7 @@ pub fn moonbit_type_to_swift_string(type_name : String) -> String {
     "Double" | "Float" => "number"
     "Bool" => "boolean"
     _ =>
-      if type_name.has_prefix("Array[") {
+      if type_name.has_prefix("Array[") && type_name.has_suffix("]") && type_name.length() >= 7 {
         let inner = type_name
           .view()[6 : type_name.length() - 1]
           .to_owned()
