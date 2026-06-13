@@ -1,0 +1,19 @@
+{
+  "import": [
+    "ringo-fm/ringo_fm_sdk/generable",
+    "ringo-fm/ringo_fm_sdk/session",
+    "ringo-fm/ringo_fm_sdk/schema",
+    "ringo-fm/ringo_fm_sdk/prompt",
+    "ringo-fm/ringo_fm_sdk/core",
+    "ringo-fm/ringo_fm_sdk/transcript",
+    "ringo-fm/ringo_fm_sdk/property",
+    "ringo-fm/ringo_fm_sdk/guide",
+    "ringo-fm/ringo_fm_sdk/ffi",
+    "ringo-fm/ringo_fm_sdk/errors"
+  ],
+  "link": {
+    "native": {
+      "cc-link-flags": "-Lvendor/foundation-models-c/.build/release -lFoundationModelsStatic"
+    }
+  }
+}
