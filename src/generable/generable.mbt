@@ -2,6 +2,7 @@
 pub struct GeneratedContent {
   ptr : @ffi.FMGeneratedContentRef
   json_data : Json
+  mut released : Bool
 }
 
 ///|
@@ -14,7 +15,7 @@ pub fn GeneratedContent::from_json_string(
     @errors.raise_generation_error(error_code, "Failed to create GeneratedContent")
   }
   let data = @json.parse(json_str)
-  { ptr, json_data: data }
+  { ptr, json_data: data, released: false }
 }
 
 ///|
@@ -32,11 +33,14 @@ pub fn GeneratedContent::from_ptr(
       _ => Json::null()
     }
   }
-  { ptr, json_data }
+  { ptr, json_data, released: false }
 }
 
 ///|
 pub fn GeneratedContent::is_complete(self : GeneratedContent) -> Bool {
+  if self.released {
+    return false
+  }
   @ffi.generated_content_is_complete(self.ptr)
 }
 
@@ -47,7 +51,11 @@ pub fn GeneratedContent::json(self : GeneratedContent) -> Json {
 
 ///|
 pub fn GeneratedContent::release(self : GeneratedContent) -> Unit {
+  if self.released {
+    return
+  }
   @ffi.release_content(self.ptr)
+  self.released = true
 }
 
 ///|
@@ -69,6 +77,9 @@ pub fn GeneratedContent::value_as_float64(
   self : GeneratedContent,
   name : String
 ) -> Double? {
+  if self.released {
+    return None
+  }
   match self.json_data {
     Object(obj) => match obj.get(name) {
       Some(Number(v, ..)) => Some(v)
@@ -83,6 +94,9 @@ pub fn GeneratedContent::value_as_int64(
   self : GeneratedContent,
   name : String
 ) -> Int64? {
+  if self.released {
+    return None
+  }
   match self.json_data {
     Object(obj) => match obj.get(name) {
       Some(Number(v, ..)) => Some(v.to_int64())
@@ -97,6 +111,9 @@ pub fn GeneratedContent::value_as_bool(
   self : GeneratedContent,
   name : String
 ) -> Bool? {
+  if self.released {
+    return None
+  }
   match self.json_data {
     Object(obj) => match obj.get(name) {
       Some(True) => Some(true)
@@ -112,6 +129,9 @@ pub fn GeneratedContent::has_property(
   self : GeneratedContent,
   name : String
 ) -> Bool {
+  if self.released {
+    return false
+  }
   match self.json_data {
     Object(obj) => obj.contains(name)
     _ => false
@@ -122,6 +142,9 @@ pub fn GeneratedContent::has_property(
 pub fn GeneratedContent::property_names(
   self : GeneratedContent
 ) -> Array[String] {
+  if self.released {
+    return []
+  }
   match self.json_data {
     Object(obj) => obj.keys().to_array()
     _ => []

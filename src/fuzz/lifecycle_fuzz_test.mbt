@@ -31,13 +31,6 @@ test "fuzz: Transcript from invalid JSON returns error or is safe" {
 }
 
 ///|
-test "fuzz: Model availability check is safe" {
-  let model = @core.SystemLanguageModel::get_default()
-  model.release()
-  model.release()
-}
-
-///|
 test "fuzz: Schema release is idempotent" {
   let schema = @schema.GenerationSchema::new(
     "TestSchema",

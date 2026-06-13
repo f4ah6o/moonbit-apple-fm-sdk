@@ -1,6 +1,7 @@
 ///|
 pub struct GenerationSchema {
   ptr : @ffi.FMGenerationSchemaRef
+  mut released : Bool
 }
 
 ///|
@@ -22,10 +23,14 @@ pub fn GenerationSchema::new(
   for prop in properties {
     prop.convert_to_c(ptr)
   }
-  { ptr, }
+  { ptr, released: false }
 }
 
 ///|
 pub fn GenerationSchema::release(self : GenerationSchema) -> Unit {
+  if self.released {
+    return
+  }
   @ffi.release_schema(self.ptr)
+  self.released = true
 }
